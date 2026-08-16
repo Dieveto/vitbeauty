@@ -1,0 +1,2 @@
+categories.csv
+all_products2.csv
