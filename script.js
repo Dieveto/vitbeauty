@@ -221,7 +221,26 @@ async function submitCheckout() {
 
     saveOrderToHistory(name, phone, items, total, orderNumber);
     saveOrderToPanel(name, phone, inst, items, total, orderNumber);
-
+// Отправка заказа на сервер
+fetch('https://vitbeauty-server.onrender.com/order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        id: Date.now().toString(),
+        number: orderNumber,
+        name: name,
+        phone: phone,
+        inst: inst || 'НЕТ',
+        items: items,
+        total: total,
+        date: new Date().toLocaleString('ru-RU'),
+        status: 'new',
+        starred: false,
+        employee: null
+    })
+}).catch(function(e) {
+    console.log('Ошибка отправки на сервер:', e);
+});
     let message = '🛍️ <b>НОВЫЙ ЗАКАЗ #' + orderNumber + '</b>\n\n';
     message += '👤 <b>Клиент:</b> ' + name + '\n';
     message += '📞 <b>Телефон:</b> ' + phone + '\n';
