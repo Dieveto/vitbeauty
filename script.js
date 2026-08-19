@@ -11,7 +11,7 @@ const CATEGORIES_KEY = 'vitbeauty_categories_v2';
 const CART_KEY = 'vitbeauty_cart';
 const ORDERS_KEY = 'vitbeauty_orders_history';
 const ORDERS_PANEL_KEY = 'vitbeauty_orders_v2';
-const DATA_VERSION = '2.1';
+const DATA_VERSION = '2.2';
 
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 let activeBrand = null;
@@ -251,7 +251,7 @@ async function submitCheckout() {
     message += '\n📦 <b>Товары:</b>\n' + itemsTelegram + '\n\n';
     message += '💰 <b>Итого:</b> ' + total + ' BYN\n';
     message += '🕐 <b>Время:</b> ' + new Date().toLocaleString('ru-RU');
-    message += '\n\n🔗 <b>Управление заказом:</b>\nhttps://dieveto.github.io/vitbeauty/admin.html\n';
+    message += '\n\n🔗 <b>Управление заказом:</b>\nhttps://dieveto.github.io/vitbeauty/orders.html\n';
     message += '🔑 <b>PIN:</b> 6202';
 
     const BOT_TOKEN = '8087505808:AAHo4lLMNffdqNIHzpRcpt7OojwpGpXAMrI';
