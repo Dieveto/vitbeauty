@@ -8,6 +8,17 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #0f0b08; color: #fff; min-height: 100vh; padding: 20px; }
+        
+        /* Экран входа */
+        .login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f0b08; z-index: 99999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #1a1410; border-radius: 20px; padding: 35px 30px; max-width: 350px; width: 90%; border: 1px solid rgba(200,168,122,0.3); text-align: center; }
+        .login-box h2 { color: #c8a87a; margin-bottom: 8px; font-size: 22px; }
+        .login-box p { color: #888; font-size: 13px; margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid rgba(200,168,122,0.3); background: rgba(255,255,255,0.05); color: #fff; font-size: 22px; text-align: center; letter-spacing: 8px; margin-bottom: 15px; }
+        .login-box input:focus { outline: none; border-color: #c8a87a; }
+        .login-box button { width: 100%; padding: 14px; background: #c8a87a; color: #0b0b0b; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; }
+        .login-error { color: #ff4444; font-size: 12px; margin-top: 10px; display: none; }
+        
         .admin-container { max-width: 900px; margin: 0 auto; }
         h1 { color: #c8a87a; text-align: center; margin-bottom: 30px; font-size: 32px; }
         .section { background: rgba(20, 15, 12, 0.95); border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(200, 168, 122, 0.2); }
@@ -24,6 +35,7 @@
         button.info { background: #2196F3; color: white; }
         button.warning { background: #FF9800; color: #000; }
         button.small { padding: 6px 14px; font-size: 11px; border-radius: 8px; }
+        
         .product-item, .category-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.04); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(200,168,122,0.08); gap: 12px; }
         .product-item.selected { border-color: #c8a87a; background: rgba(200,168,122,0.1); }
         .product-checkbox { width: auto !important; margin: 0 !important; cursor: pointer; accent-color: #c8a87a; min-width: 18px; height: 18px; }
@@ -51,6 +63,7 @@
         .order-list-total { font-weight: 600; color: #dbb98c; font-size: 16px; }
         .order-list-date { font-size: 11px; color: #888; }
         .order-list-status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+        .status-new { background: rgba(255,68,68,0.2); color: #ff6b6b; }
         .status-processing { background: rgba(255,152,0,0.2); color: #FFB74D; }
         .status-calling { background: rgba(33,150,243,0.2); color: #64B5F6; }
         .status-delivery { background: rgba(76,175,80,0.2); color: #81C784; }
@@ -59,7 +72,7 @@
         .order-detail.open { display: block; }
         .order-detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #aaa; }
         .order-detail-row span:last-child { color: #f5f0eb; font-weight: 500; }
-        .order-detail-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+        .order-detail-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
         .order-detail-actions select { width: auto; padding: 8px 32px 8px 12px; font-size: 12px; margin-bottom: 0; border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(200,168,122,0.2); }
         .toast { position: fixed; top: 20px; right: 20px; background: #c8a87a; color: #0b0b0b; padding: 15px 25px; border-radius: 10px; z-index: 9999; animation: slideIn 0.3s ease; font-weight: 600; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -70,73 +83,108 @@
         .modal h2 { color: #c8a87a; margin-bottom: 20px; }
         .modal .btn-row { display: flex; gap: 10px; margin-top: 15px; }
         .modal label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; margin-top: 10px; }
+        .logout-btn { position: fixed; top: 20px; right: 20px; z-index: 999; }
+        .hidden { display: none !important; }
+        
+        @media (max-width: 768px) {
+            .admin-container { padding: 10px; }
+            .section { padding: 15px; }
+            .order-list-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .order-detail-actions { flex-direction: column; align-items: stretch; }
+            .order-detail-actions select { width: 100%; }
+        }
     </style>
 </head>
 <body>
-    <div class="admin-container">
+
+    <!-- ЭКРАН ВХОДА -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h2>🔐 Вход</h2>
+            <p>Введите PIN-код</p>
+            <input type="password" id="pinInput" maxlength="4" inputmode="numeric">
+            <button onclick="checkPin()">Войти</button>
+            <div class="login-error" id="loginError">Неверный PIN</div>
+        </div>
+    </div>
+
+    <div class="admin-container hidden" id="adminPanel">
         <h1>⚙️ Админ-панель ВитБьюти</h1>
+        <button class="logout-btn danger small" onclick="logout()">Выйти</button>
         
-        <div class="section"><h2>📊 Статистика</h2><div class="stats" id="statsContainer"></div></div>
-        <div class="section"><h2>📋 Заказы</h2><div class="order-search"><input type="text" id="orderSearchInput" placeholder="🔍 Поиск по номеру заказа..."><button class="small" onclick="searchOrders()">Найти</button><button class="small" onclick="resetOrderSearch()">Все</button></div><div id="ordersAdminList"></div></div>
-        
-        <div class="section"><h2>➕ Добавить товар</h2>
-            <form id="addProductForm">
-                <input type="text" id="productName" placeholder="Название товара *" required>
-                <input type="text" id="productArticle" placeholder="Артикул">
-                <select id="productBrand" required><option value="">Бренд *</option><option value="HAIR SEKTA">HAIR SEKTA</option><option value="IMPRESSION PROFESSIONAL">IMPRESSION PROFESSIONAL</option><option value="MALECULA">MALECULA</option><option value="ЧИСТОВЬЕ">ЧИСТОВЬЕ</option></select>
-                <select id="productCategory"><option value="">Без категории</option></select>
-                <input type="text" id="productPrice" placeholder="Цена *" required>
-                <input type="text" id="productOldPrice" placeholder="Старая цена">
-                <input type="text" id="productImg" placeholder="Ссылка на фото">
-                <textarea id="productDesc" placeholder="Описание"></textarea>
-                <button type="submit">➕ Добавить</button>
-            </form>
-        </div>
-        
-        <div class="section"><h2>📂 Категории</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;"><div><h3>➕ Категория</h3><input type="text" id="newCatName" placeholder="Название"><select id="newCatBrand"><option value="">Бренд</option><option value="HAIR SEKTA">HAIR SEKTA</option><option value="IMPRESSION PROFESSIONAL">IMPRESSION PROFESSIONAL</option><option value="MALECULA">MALECULA</option><option value="ЧИСТОВЬЕ">ЧИСТОВЬЕ</option></select><button onclick="addCategory()">➕</button></div><div><h3>📁 Подкатегория</h3><select id="parentCatSelect"><option value="">Родительская</option></select><input type="text" id="newSubCatName" placeholder="Название"><button onclick="addSubCategory()">➕</button></div></div><h3>Список</h3><div id="categoryList"></div></div>
-        
-        <div class="section"><h2>📦 Товары</h2>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#aaa;">
-                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" style="width:auto;margin:0;accent-color:#c8a87a;"> Выбрать все
-                    </label>
-                    <span id="selectedCount" style="font-size:12px;color:#888;"></span>
-                </div>
-                <button class="danger small" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;">🗑️ Удалить выбранные</button>
+        <!-- АДМИН: ПОЛНЫЙ ДОСТУП -->
+        <div id="adminSections">
+            <div class="section"><h2>📊 Статистика</h2><div class="stats" id="statsContainer"></div></div>
+            <div class="section"><h2>➕ Добавить товар</h2>
+                <form id="addProductForm">
+                    <input type="text" id="productName" placeholder="Название товара *" required>
+                    <input type="text" id="productArticle" placeholder="Артикул">
+                    <select id="productBrand" required><option value="">Бренд *</option><option value="HAIR SEKTA">HAIR SEKTA</option><option value="IMPRESSION PROFESSIONAL">IMPRESSION PROFESSIONAL</option><option value="MALECULA">MALECULA</option><option value="ЧИСТОВЬЕ">ЧИСТОВЬЕ</option></select>
+                    <select id="productCategory"><option value="">Без категории</option></select>
+                    <input type="text" id="productPrice" placeholder="Цена *" required>
+                    <input type="text" id="productOldPrice" placeholder="Старая цена">
+                    <input type="text" id="productImg" placeholder="Ссылка на фото">
+                    <textarea id="productDesc" placeholder="Описание"></textarea>
+                    <button type="submit">➕ Добавить</button>
+                </form>
             </div>
-            <div id="productList"></div>
+            
+            <div class="section"><h2>📂 Категории</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;"><div><h3>➕ Категория</h3><input type="text" id="newCatName" placeholder="Название"><select id="newCatBrand"><option value="">Бренд</option><option value="HAIR SEKTA">HAIR SEKTA</option><option value="IMPRESSION PROFESSIONAL">IMPRESSION PROFESSIONAL</option><option value="MALECULA">MALECULA</option><option value="ЧИСТОВЬЕ">ЧИСТОВЬЕ</option></select><button onclick="addCategory()">➕</button></div><div><h3>📁 Подкатегория</h3><select id="parentCatSelect"><option value="">Родительская</option></select><input type="text" id="newSubCatName" placeholder="Название"><button onclick="addSubCategory()">➕</button></div></div><h3>Список</h3><div id="categoryList"></div></div>
+            
+            <div class="section"><h2>📦 Товары</h2>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#aaa;">
+                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" style="width:auto;margin:0;accent-color:#c8a87a;"> Выбрать все
+                        </label>
+                        <span id="selectedCount" style="font-size:12px;color:#888;"></span>
+                    </div>
+                    <button class="danger small" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;">🗑️ Удалить выбранные</button>
+                </div>
+                <div id="productList"></div>
+            </div>
+            
+            <div class="section export-section">
+                <h2>📥 Экспорт</h2>
+                <button class="success" onclick="exportAllCSV()">📥 Скачать CSV</button>
+                <button class="success" onclick="exportAllExcel()">📥 Скачать Excel</button>
+                <button class="info" onclick="exportByBrand()">📥 По брендам</button>
+                <button class="info" onclick="exportCategories()">📥 Все категории</button>
+                <button class="info" onclick="exportAddedCategories()">📥 Добавленные категории</button>
+                <br><br>
+                <h3>📤 Импорт Excel/CSV</h3>
+                <p style="color:#ccc;font-size:13px;margin-bottom:5px;">
+                    Колонки: <b>Бренд | ID КАТ | Артикул | Название | Категория | Подкатегория | Цена | Старая цена | Тег | Фото | Описание</b>
+                </p>
+                <p class="import-hint">
+                    🔹 <b>Подкатегория</b> — приоритет (если указана, товар идёт в неё)<br>
+                    🔹 <b>Категория</b> — если Подкатегория пустая<br>
+                    🔹 Поиск только внутри указанного <b>Бренда</b><br>
+                    🔹 Если не найдено — создаётся новая категория
+                </p>
+                <input type="file" id="mainFileInput" accept=".csv,.xlsx,.xls" style="display:inline-block;width:auto;">
+                <button class="info" onclick="importFile()">📤 Загрузить</button>
+                <br><br>
+                <h3>📤 Собрать несколько файлов</h3>
+                <input type="file" id="multiFileInput" accept=".csv,.xlsx,.xls" multiple style="display:inline-block;width:auto;"><br>
+                <button class="info" onclick="mergeFiles('add')">📤 Собрать и добавить</button>
+                <button class="success" onclick="mergeFiles('csv')">📥 Скачать CSV</button>
+                <button class="success" onclick="mergeFiles('excel')">📥 Скачать Excel</button>
+                <br><br>
+                <button class="info" onclick="autoImportCSV()">🔄 Обновить из data/</button>
+                <button class="danger small" onclick="clearAll()">🗑️ Очистить всё</button>
+            </div>
         </div>
         
-        <div class="section export-section">
-            <h2>📥 Экспорт</h2>
-            <button class="success" onclick="exportAllCSV()">📥 Скачать CSV</button>
-            <button class="success" onclick="exportAllExcel()">📥 Скачать Excel</button>
-            <button class="info" onclick="exportByBrand()">📥 По брендам</button>
-            <button class="info" onclick="exportCategories()">📥 Все категории</button>
-            <button class="info" onclick="exportAddedCategories()">📥 Добавленные категории</button>
-            <br><br>
-            <h3>📤 Импорт Excel/CSV</h3>
-            <p style="color:#ccc;font-size:13px;margin-bottom:5px;">
-                Колонки: <b>Бренд | ID КАТ | Артикул | Название | Категория | Подкатегория | Цена | Старая цена | Тег | Фото | Описание</b>
-            </p>
-            <p class="import-hint">
-                🔹 <b>Подкатегория</b> — приоритет (если указана, товар идёт в неё)<br>
-                🔹 <b>Категория</b> — если Подкатегория пустая<br>
-                🔹 Поиск только внутри указанного <b>Бренда</b><br>
-                🔹 Если не найдено — создаётся новая категория
-            </p>
-            <input type="file" id="mainFileInput" accept=".csv,.xlsx,.xls" style="display:inline-block;width:auto;">
-            <button class="info" onclick="importFile()">📤 Загрузить</button>
-            <br><br>
-            <h3>📤 Собрать несколько файлов</h3>
-            <input type="file" id="multiFileInput" accept=".csv,.xlsx,.xls" multiple style="display:inline-block;width:auto;"><br>
-            <button class="info" onclick="mergeFiles('add')">📤 Собрать и добавить</button>
-            <button class="success" onclick="mergeFiles('csv')">📥 Скачать CSV</button>
-            <button class="success" onclick="mergeFiles('excel')">📥 Скачать Excel</button>
-            <br><br>
-            <button class="info" onclick="autoImportCSV()">🔄 Обновить из data/</button>
-            <button class="danger small" onclick="clearAll()">🗑️ Очистить всё</button>
+        <!-- ЗАКАЗЫ (видны обеим ролям) -->
+        <div class="section"><h2>📋 Заказы</h2>
+            <div class="order-search">
+                <input type="text" id="orderSearchInput" placeholder="🔍 Поиск по номеру...">
+                <button class="small" onclick="searchOrders()">Найти</button>
+                <button class="small" onclick="resetOrderSearch()">Все</button>
+                <button class="small" onclick="loadOrdersFromServer()">🔄</button>
+            </div>
+            <div id="ordersAdminList"></div>
         </div>
     </div>
 
@@ -162,11 +210,70 @@
         const ORDERS_KEY = 'vitbeauty_orders_history';
         const ORDERS_SERVER_KEY = 'vitbeauty_orders_v2';
         const BRAND_NAMES = ['HAIR SEKTA', 'IMPRESSION PROFESSIONAL', 'MALECULA', 'ЧИСТОВЬЕ'];
+        const ADMIN_PIN = '0636';
+        const MANAGER_PIN = '6202';
+        
+        let currentRole = null;
         
         const brandCatalog = { 'HAIR SEKTA': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'IMPRESSION PROFESSIONAL': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'MALECULA': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'ЧИСТОВЬЕ': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] } };
         
         let selectedProducts = new Set();
         
+        // ========== АВТОРИЗАЦИЯ ==========
+        function checkPin() {
+            const pin = document.getElementById('pinInput').value.trim();
+            if (pin === ADMIN_PIN) {
+                currentRole = 'admin';
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('adminSections').classList.remove('hidden');
+                loadData();
+                renderAll();
+                loadOrdersFromServer();
+            } else if (pin === MANAGER_PIN) {
+                currentRole = 'manager';
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('adminSections').classList.add('hidden');
+                loadOrdersFromServer();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+                document.getElementById('pinInput').value = '';
+            }
+        }
+        
+        function logout() {
+            currentRole = null;
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('pinInput').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+        
+        document.getElementById('pinInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPin();
+        });
+        
+        // ========== ЗАГРУЗКА ЗАКАЗОВ С СЕРВЕРА ==========
+        function loadOrdersFromServer() {
+            showToast('🔄 Загрузка заказов...');
+            fetch('https://vitbeauty-server.onrender.com/orders')
+                .then(function(r) { return r.json(); })
+                .then(function(orders) {
+                    if (orders && orders.length) {
+                        localStorage.setItem(ORDERS_SERVER_KEY, JSON.stringify(orders));
+                        renderOrdersAdmin();
+                        showToast('✅ Заказов: ' + orders.length);
+                    } else {
+                        showToast('❌ Заказов нет');
+                    }
+                })
+                .catch(function(e) {
+                    showToast('❌ Сервер не отвечает');
+                });
+        }
+        
+        // ========== ОСТАЛЬНЫЕ ФУНКЦИИ (как в предыдущей версии) ==========
         function getParentCategoryName(brand, subCatId) {
             const sub = brandCatalog[brand].categories.find(c => c.id === subCatId);
             if (!sub || !sub.parent) return '';
@@ -218,20 +325,6 @@
             const p = localStorage.getItem(STORAGE_KEY), c = localStorage.getItem(CATEGORIES_KEY);
             if (p) try { JSON.parse(p).forEach(x => { if (x.brand && brandCatalog[x.brand] && !brandCatalog[x.brand].products.find(e => e.id === x.id)) brandCatalog[x.brand].products.push(x); }); } catch(e) {}
             if (c) try { Object.entries(JSON.parse(c)).forEach(([b, cats]) => { if (brandCatalog[b]) { cats.forEach(cat => { if (!brandCatalog[b].categories.find(x => x.id === cat.id)) brandCatalog[b].categories.push({ id: cat.id, label: cat.name, parent: null }); if (cat.children) cat.children.forEach(sub => { const sid = cat.id + '_sub_' + sub.replace(/\s/g, '_'); if (!brandCatalog[b].categories.find(x => x.id === sid)) brandCatalog[b].categories.push({ id: sid, label: sub, parent: cat.id }); }); }); } }); } catch(e) {}
-            
-            // Загрузка заказов с сервера
-            fetch('https://vitbeauty-server.onrender.com/orders')
-                .then(function(r) { return r.json(); })
-                .then(function(orders) {
-                    if (orders && orders.length) {
-                        localStorage.setItem(ORDERS_SERVER_KEY, JSON.stringify(orders));
-                        renderOrdersAdmin();
-                        console.log('✅ Заказы загружены с сервера:', orders.length);
-                    }
-                })
-                .catch(function(e) {
-                    console.log('Ошибка загрузки с сервера:', e);
-                });
         }
         
         function saveData() {
@@ -248,7 +341,7 @@
             localStorage.setItem(CATEGORIES_KEY, JSON.stringify(cats));
         }
         
-        function renderAll() { renderStats(); renderProducts(); renderCategories(); renderOrdersAdmin(); updateSelects(); updateEditCategorySelect(); }
+        function renderAll() { renderStats(); renderProducts(); renderCategories(); updateSelects(); updateEditCategorySelect(); }
         
         function renderStats() {
             let t = 0; const brands = [];
@@ -477,7 +570,6 @@
         function clearAll() { if (confirm('Удалить ВСЕ товары?')) { Object.values(brandCatalog).forEach(d => d.products = []); selectedProducts.clear(); saveData(); renderAll(); } }
         function copyToClipboard(t) { navigator.clipboard?.writeText(t).then(() => showToast('📋 ' + t)).catch(() => { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }); }
         
-        // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ
         function getAllOrders() { 
             const serverOrders = JSON.parse(localStorage.getItem(ORDERS_SERVER_KEY) || '[]');
             const oldOrders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
@@ -492,10 +584,19 @@
             let orders = getAllOrders();
             if (!orders.length) { c.innerHTML = '<p style="color:#666;padding:20px;">Заказов пока нет</p>'; return; }
             if (q) { orders = orders.filter(o => o.number.toLowerCase().includes(q.toLowerCase())); if (!orders.length) { c.innerHTML = '<p style="color:#666;padding:20px;">Не найдены</p>'; return; } }
-            c.innerHTML = orders.reverse().map(o => `<div class="order-list-item" onclick="toggleOrderDetail('${o.number}')"><div class="order-list-left"><div class="order-list-number">#${o.number}</div><div class="order-list-total">${o.total} BYN</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="order-list-date">${o.date}</div><span class="order-list-status status-${o.status}">${{processing:'⏳ В обработке',calling:'📞 Звонок',delivery:'🚚 Доставка',done:'✅ Завершён'}[o.status]||'В обработке'}</span></div></div><div class="order-detail" id="detail-${o.number}"><div class="order-detail-row"><span>Клиент:</span><span>${o.name}</span></div><div class="order-detail-row"><span>Телефон:</span><span>${o.phone}</span></div><div class="order-detail-row"><span>Товары:</span><span>${o.items}</span></div><div class="order-detail-row"><span>Сумма:</span><span>${o.total} BYN</span></div><div class="order-detail-actions"><span style="font-size:12px;color:#888;">Статус:</span><select onchange="changeOrderStatus('${o.number}',this.value)" onclick="event.stopPropagation();"><option value="processing" ${o.status==='processing'?'selected':''}>⏳ В обработке</option><option value="calling" ${o.status==='calling'?'selected':''}>📞 Звонок</option><option value="delivery" ${o.status==='delivery'?'selected':''}>🚚 Доставка</option><option value="done" ${o.status==='done'?'selected':''}>✅ Завершён</option></select></div></div>`).join('');
+            c.innerHTML = orders.map(o => `<div class="order-list-item" onclick="toggleOrderDetail('${o.number}')"><div class="order-list-left"><div class="order-list-number">#${o.number}</div><div class="order-list-total">${o.total} BYN</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="order-list-date">${o.date}</div><span class="order-list-status status-${o.status}">${{processing:'⏳ В обработке',calling:'📞 Звонок',delivery:'🚚 Доставка',done:'✅ Завершён',new:'🆕 Новый'}[o.status]||'В обработке'}</span></div></div><div class="order-detail" id="detail-${o.number}"><div class="order-detail-row"><span>Клиент:</span><span>${o.name}</span></div><div class="order-detail-row"><span>Телефон:</span><span>${o.phone}</span></div>${o.inst && o.inst !== 'НЕТ' ? '<div class="order-detail-row"><span>Instagram:</span><span>' + o.inst + '</span></div>' : ''}<div class="order-detail-row"><span>Товары:</span><span>${o.items}</span></div><div class="order-detail-row"><span>Сумма:</span><span>${o.total} BYN</span></div><div class="order-detail-actions"><a href="tel:${o.phone}" style="background:#4CAF50;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:12px;">📞 Позвонить</a><select onchange="changeOrderStatus('${o.number}',this.value)" onclick="event.stopPropagation();"><option value="new" ${o.status==='new'?'selected':''}>🆕 Новый</option><option value="processing" ${o.status==='processing'?'selected':''}>⏳ В обработке</option><option value="calling" ${o.status==='calling'?'selected':''}>📞 Звонок</option><option value="delivery" ${o.status==='delivery'?'selected':''}>🚚 Доставка</option><option value="done" ${o.status==='done'?'selected':''}>✅ Завершён</option></select></div></div>`).join('');
         }
-        function toggleOrderDetail(n) { const d = document.getElementById('detail-' + n), i = d.previousElementSibling; if (d.classList.contains('open')) { d.classList.remove('open'); i.style.borderRadius = '12px'; } else { document.querySelectorAll('.order-detail.open').forEach(x => { x.classList.remove('open'); x.previousElementSibling.style.borderRadius = '12px'; }); d.classList.add('open'); i.style.borderRadius = '12px 12px 0 0'; } }
-        function changeOrderStatus(n, s) { const orders = getAllOrders(); const o = orders.find(x => x.number === n); if (o) { o.status = s; localStorage.setItem(ORDERS_SERVER_KEY, JSON.stringify(orders)); renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); } }
+        function toggleOrderDetail(n) { const d = document.getElementById('detail-' + n); if (d) { if (d.classList.contains('open')) d.classList.remove('open'); else d.classList.add('open'); } }
+        function changeOrderStatus(n, s) { 
+            const orders = getAllOrders(); 
+            const o = orders.find(x => x.number === n); 
+            if (o) { 
+                o.status = s; 
+                localStorage.setItem(ORDERS_SERVER_KEY, JSON.stringify(orders)); 
+                renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); 
+                showToast('✅ Статус обновлён');
+            } 
+        }
         
         function downloadFile(content, filename, type = 'text/csv;charset=utf-8;') { const blob = new Blob(['\uFEFF' + content], { type }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
         function getAllProductsArray() { const all = []; Object.entries(brandCatalog).forEach(([brand, data]) => { data.products.forEach(p => all.push({ ...p, brand })); }); return all; }
@@ -509,18 +610,14 @@
             let csv = 'Бренд;ID категории;Название;Тип;Родитель\n';
             let count = 0;
             Object.entries(brandCatalog).forEach(function([brand, data]) {
-                data.categories
-                    .filter(function(cat) { return !cat.parent && cat.id !== 'all' && cat.id !== 'new'; })
-                    .forEach(function(cat) {
-                        csv += brand + ';' + cat.id + ';' + cat.label + ';Категория;\n';
+                data.categories.filter(function(cat) { return !cat.parent && cat.id !== 'all' && cat.id !== 'new'; }).forEach(function(cat) {
+                    csv += brand + ';' + cat.id + ';' + cat.label + ';Категория;\n';
+                    count++;
+                    data.categories.filter(function(sub) { return sub.parent === cat.id; }).forEach(function(sub) {
+                        csv += brand + ';' + sub.id + ';' + sub.label + ';Подкатегория;' + cat.id + '\n';
                         count++;
-                        data.categories
-                            .filter(function(sub) { return sub.parent === cat.id; })
-                            .forEach(function(sub) {
-                                csv += brand + ';' + sub.id + ';' + sub.label + ';Подкатегория;' + cat.id + '\n';
-                                count++;
-                            });
                     });
+                });
             });
             if (count === 0) return showToast('❌ Нет добавленных категорий');
             downloadFile(csv, 'categories.csv');
@@ -539,25 +636,21 @@
                 if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
                     try { const wb = XLSX.read(e.target.result, { type: 'array' }); text = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]], { FS: '\t' }); } catch(err) { return showToast('❌ Ошибка чтения Excel!'); }
                 } else { text = e.target.result.replace(/^\uFEFF/, ''); }
-                
                 const { lines, delimiter } = parseFileToLines(text);
                 if (lines.length < 2) return showToast('❌ Файл пустой!');
                 const headers = lines[0].split(delimiter).map(h => h.trim());
-                
                 const brandIdx = findColumnIndex(headers, 'Бренд', 'бренд', 'brand');
                 const catIdx = findColumnIndex(headers, 'Категория', 'категория', 'category');
                 const subCatIdx = findColumnIndex(headers, 'Подкатегория', 'подкатегория', 'subcategory');
                 const nameIdx = findColumnIndex(headers, 'Название', 'название', 'Наименование', 'Номенклатура');
                 const priceIdx = findColumnIndex(headers, 'Цена', 'цена', 'Розничная');
-                const oldPriceIdx = findColumnIndex(headers, 'Старая цена', 'старая цена', 'old price');
+                const oldPriceIdx = findColumnIndex(headers, 'Старая цена', 'старая цена');
                 const descIdx = findColumnIndex(headers, 'Описание', 'описание');
                 const artIdx = findColumnIndex(headers, 'Артикул', 'артикул');
                 const tagIdx = findColumnIndex(headers, 'Тег', 'тег', 'tag');
-                const imgIdx = findColumnIndex(headers, 'Фото', 'фото', 'img', 'image');
-                const catIdIdx = findColumnIndex(headers, 'ID КАТ', 'id кат', 'category id');
-                
+                const imgIdx = findColumnIndex(headers, 'Фото', 'фото', 'img');
+                const catIdIdx = findColumnIndex(headers, 'ID КАТ', 'id кат');
                 if (nameIdx === -1 || priceIdx === -1) return showToast('❌ Не найдены Название или Цена!');
-                
                 let count = 0, skipped = 0;
                 for (let i = 1; i < lines.length; i++) {
                     const cols = lines[i].split(delimiter).map(v => v.trim());
@@ -566,33 +659,17 @@
                     const brandRaw = brandIdx >= 0 ? (cols[brandIdx] || '') : '';
                     const catRaw = catIdx >= 0 ? (cols[catIdx] || '') : '';
                     const subCatRaw = subCatIdx >= 0 ? (cols[subCatIdx] || '') : '';
-                    const article = artIdx >= 0 ? (cols[artIdx] || '') : '';
-                    const description = descIdx >= 0 ? (cols[descIdx] || '') : '';
-                    const oldPrice = oldPriceIdx >= 0 ? (cols[oldPriceIdx] || '') : '';
-                    const tag = tagIdx >= 0 ? (cols[tagIdx] || '') : '';
-                    const img = imgIdx >= 0 ? (cols[imgIdx] || '') : '';
-                    const catId = catIdIdx >= 0 ? (cols[catIdIdx] || '') : '';
-                    
                     if (!name || !priceRaw) continue;
                     const priceNum = parseFloat(priceRaw); if (isNaN(priceNum)) continue;
-                    
-                    let foundBrand = brandRaw ? BRAND_NAMES.find(b => b.toUpperCase() === brandRaw.toUpperCase() || b.toUpperCase().includes(brandRaw.toUpperCase()) || brandRaw.toUpperCase().includes(b.toUpperCase())) : null;
+                    let foundBrand = brandRaw ? BRAND_NAMES.find(b => b.toUpperCase() === brandRaw.toUpperCase() || b.toUpperCase().includes(brandRaw.toUpperCase())) : null;
                     if (!foundBrand) foundBrand = BRAND_NAMES.find(b => name.toUpperCase().includes(b.toUpperCase()) || catRaw.toUpperCase().includes(b.toUpperCase()) || subCatRaw.toUpperCase().includes(b.toUpperCase()));
                     if (!foundBrand) { skipped++; continue; }
-                    
-                    if (!brandCatalog[foundBrand]) { brandCatalog[foundBrand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }; }
-                    
+                    if (!brandCatalog[foundBrand]) brandCatalog[foundBrand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] };
                     const catResult = findOrCreateCategory(foundBrand, catRaw, subCatRaw);
                     const displayCategory = catResult.parentName ? catResult.parentName + ' → ' + catResult.name : catResult.name;
-                    
-                    const product = { id: 'imp_' + Date.now() + '_' + i, article: article || catId || ('ART-' + Date.now().toString(36).slice(-4)), name, brand: foundBrand, price: priceNum.toFixed(2) + ' BYN', oldPrice: oldPrice || null, category: displayCategory, categoryId: catResult.id, tag: tag || null, img: img || 'https://i.ibb.co/p7YgvT8/images.jpg', description };
-                    
-                    if (!brandCatalog[foundBrand].products.find(p => p.name === name && p.brand === foundBrand)) {
-                        brandCatalog[foundBrand].products.push(product);
-                        count++;
-                    }
+                    const product = { id: 'imp_' + Date.now() + '_' + i, article: (artIdx>=0?cols[artIdx]:'') || (catIdIdx>=0?cols[catIdIdx]:'') || '', name, brand: foundBrand, price: priceNum.toFixed(2) + ' BYN', oldPrice: oldPriceIdx>=0?(cols[oldPriceIdx]||''):'' || null, category: displayCategory, categoryId: catResult.id, tag: tagIdx>=0?(cols[tagIdx]||''):'' || null, img: imgIdx>=0?(cols[imgIdx]||''):'https://i.ibb.co/p7YgvT8/images.jpg', description: descIdx>=0?(cols[descIdx]||''):'' };
+                    if (!brandCatalog[foundBrand].products.find(p => p.name === name && p.brand === foundBrand)) { brandCatalog[foundBrand].products.push(product); count++; }
                 }
-                
                 saveData(); renderAll();
                 showToast(`✅ Импортировано ${count} товаров` + (skipped > 0 ? ` (пропущено ${skipped})` : ''));
                 document.getElementById('mainFileInput').value = '';
@@ -618,13 +695,6 @@
                     const subCatIdx = findColumnIndex(headers, 'Подкатегория', 'подкатегория');
                     const nameIdx = findColumnIndex(headers, 'Название', 'название', 'Наименование', 'Номенклатура');
                     const priceIdx = findColumnIndex(headers, 'Цена', 'цена', 'Розничная');
-                    const oldPriceIdx = findColumnIndex(headers, 'Старая цена', 'старая цена');
-                    const artIdx = findColumnIndex(headers, 'Артикул', 'артикул');
-                    const descIdx = findColumnIndex(headers, 'Описание', 'описание');
-                    const tagIdx = findColumnIndex(headers, 'Тег', 'тег');
-                    const imgIdx = findColumnIndex(headers, 'Фото', 'фото');
-                    const catIdIdx = findColumnIndex(headers, 'ID КАТ', 'id кат');
-                    
                     if (nameIdx === -1 || priceIdx === -1) { done++; return; }
                     for (let i = 1; i < lines.length; i++) {
                         const cols = lines[i].split(delimiter).map(v => v.trim());
@@ -635,17 +705,13 @@
                         const brandRaw = brandIdx >= 0 ? (cols[brandIdx] || '') : '';
                         const catRaw = catIdx >= 0 ? (cols[catIdx] || '') : '';
                         const subCatRaw = subCatIdx >= 0 ? (cols[subCatIdx] || '') : '';
-                        
                         let foundBrand = brandRaw ? BRAND_NAMES.find(b => b.toUpperCase() === brandRaw.toUpperCase() || b.toUpperCase().includes(brandRaw.toUpperCase())) : null;
                         if (!foundBrand) foundBrand = BRAND_NAMES.find(b => name.toUpperCase().includes(b.toUpperCase()) || catRaw.toUpperCase().includes(b.toUpperCase()) || subCatRaw.toUpperCase().includes(b.toUpperCase()));
                         if (!foundBrand) continue;
-                        
-                        if (!brandCatalog[foundBrand]) { brandCatalog[foundBrand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }; }
-                        
+                        if (!brandCatalog[foundBrand]) brandCatalog[foundBrand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] };
                         const catResult = findOrCreateCategory(foundBrand, catRaw, subCatRaw);
                         const displayCategory = catResult.parentName ? catResult.parentName + ' → ' + catResult.name : catResult.name;
-                        
-                        allProducts.push({ brand: foundBrand, categoryId: catResult.id, article: (artIdx>=0?cols[artIdx]:'') || (catIdIdx>=0?cols[catIdIdx]:'') || '', name, category: displayCategory, price: priceNum.toFixed(2) + ' BYN', oldPrice: oldPriceIdx>=0?(cols[oldPriceIdx]||''):'', tag: tagIdx>=0?(cols[tagIdx]||''):'', img: imgIdx>=0?(cols[imgIdx]||''):'https://i.ibb.co/p7YgvT8/images.jpg', description: descIdx>=0?(cols[descIdx]||''):'' });
+                        allProducts.push({ brand: foundBrand, categoryId: catResult.id, article: '', name, category: displayCategory, price: priceNum.toFixed(2) + ' BYN', oldPrice: '', tag: '', img: 'https://i.ibb.co/p7YgvT8/images.jpg', description: '' });
                         total++;
                     }
                     done++;
@@ -658,10 +724,10 @@
                             saveData(); renderAll(); showToast(`✅ Добавлено ${total} товаров`);
                         } else if (action === 'csv') {
                             let csv = 'Бренд;ID КАТ;Артикул;Название;Категория;Подкатегория;Цена;Старая цена;Тег;Фото;Описание\n';
-                            allProducts.forEach(p => { const parentCat = p.categoryId ? getParentCategoryName(p.brand, p.categoryId) : ''; const subCat = parentCat ? p.category.split(' → ').pop() : ''; const mainCat = parentCat || (p.category.includes(' → ') ? p.category.split(' → ')[0] : p.category); csv += [p.brand, p.categoryId, p.article, p.name, mainCat, subCat, p.price, p.oldPrice, p.tag, p.img, p.description].join(';') + '\n'; });
+                            allProducts.forEach(p => { csv += [p.brand, p.categoryId, p.article, p.name, p.category.split(' → ')[0], p.category.includes(' → ') ? p.category.split(' → ').pop() : '', p.price, p.oldPrice, p.tag, p.img, p.description].join(';') + '\n'; });
                             downloadFile(csv, 'merged_products.csv'); showToast(`✅ CSV скачан`);
                         } else if (action === 'excel') {
-                            const data = allProducts.map(p => { const parentCat = p.categoryId ? getParentCategoryName(p.brand, p.categoryId) : ''; const subCat = parentCat ? p.category.split(' → ').pop() : ''; const mainCat = parentCat || (p.category.includes(' → ') ? p.category.split(' → ')[0] : p.category); return { 'Бренд': p.brand, 'ID КАТ': p.categoryId, 'Артикул': p.article, 'Название': p.name, 'Категория': mainCat, 'Подкатегория': subCat, 'Цена': p.price, 'Старая цена': p.oldPrice, 'Тег': p.tag, 'Фото': p.img, 'Описание': p.description }; });
+                            const data = allProducts.map(p => ({ 'Бренд': p.brand, 'ID КАТ': p.categoryId, 'Артикул': p.article, 'Название': p.name, 'Категория': p.category.split(' → ')[0], 'Подкатегория': p.category.includes(' → ') ? p.category.split(' → ').pop() : '', 'Цена': p.price }));
                             const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
                             XLSX.utils.book_append_sheet(wb, ws, 'Товары'); XLSX.writeFile(wb, 'merged_products.xlsx');
                             showToast(`✅ Excel скачан`);
@@ -676,8 +742,6 @@
         async function autoImportCSV() { try { const resp = await fetch('./data/files_list.txt'); if (!resp.ok) return showToast('files_list.txt не найден!'); const files = (await resp.text()).split('\n').map(f => f.trim()).filter(f => f.endsWith('.csv')); let total = 0; for (const f of files) { try { const r = await fetch('./data/' + f); if (!r.ok) continue; const text = await r.text(); const { lines, delimiter } = parseFileToLines(text); const headers = lines[0].split(delimiter).map(h => h.trim()); const nameIdx = findColumnIndex(headers, 'Название', 'Наименование'); const priceIdx = findColumnIndex(headers, 'Цена', 'Розничная'); const brandIdx = findColumnIndex(headers, 'Бренд'); if (nameIdx === -1 || priceIdx === -1) continue; for (let i = 1; i < lines.length; i++) { const cols = lines[i].split(delimiter).map(v => v.trim()); const name = cols[nameIdx]||'', priceRaw = (cols[priceIdx]||'').replace(',','.'); if (!name||!priceRaw) continue; const pn = parseFloat(priceRaw); if (isNaN(pn)) continue; let fb = brandIdx>=0 ? BRAND_NAMES.find(b=>b.toUpperCase()===cols[brandIdx].toUpperCase()) : null; if (!fb) fb = BRAND_NAMES.find(b=>name.toUpperCase().includes(b.toUpperCase())); if (!fb) continue; if (!brandCatalog[fb]) brandCatalog[fb]={categories:[{id:'all',label:'Все товары'},{id:'new',label:'Новинки'}],products:[]}; const p={id:'csv_'+Date.now()+'_'+i,name,article:'',brand:fb,price:pn.toFixed(2)+' BYN',oldPrice:null,category:'Все товары',categoryId:'',tag:null,img:'https://i.ibb.co/p7YgvT8/images.jpg',description:''}; if(!brandCatalog[fb].products.find(e=>e.name===p.name)){brandCatalog[fb].products.push(p);total++;} } } catch(e) {} } saveData(); renderAll(); showToast(`Загружено ${total} товаров!`); } catch(e) { showToast('Ошибка!'); } }
         
         function showToast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2000); }
-        
-        loadData(); renderAll();
     </script>
 </body>
 </html>
