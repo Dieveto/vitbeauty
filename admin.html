@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель ВитБьюти</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0b08; color: #fff; min-height: 100vh; padding: 20px; }
+        .admin-container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #c8a87a; text-align: center; margin-bottom: 30px; font-size: 32px; }
+        .section { background: rgba(20, 15, 12, 0.95); border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(200, 168, 122, 0.2); }
+        h2 { color: #c8a87a; margin-bottom: 20px; font-size: 20px; }
+        h3 { color: #c8a87a; margin: 20px 0 15px; font-size: 16px; }
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid rgba(200, 168, 122, 0.2); background: rgba(255, 255, 255, 0.05); color: #fff; font-size: 14px; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #c8a87a; }
+        select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23c8a87a' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+        select option { background: #1a1410; color: #fff; }
+        button { background: #c8a87a; color: #0b0b0b; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.3s; margin-right: 8px; margin-bottom: 8px; }
+        button:hover { background: #dbb98c; transform: translateY(-2px); }
+        button.danger { background: #ff4444; color: white; }
+        button.success { background: #4CAF50; color: white; }
+        button.info { background: #2196F3; color: white; }
+        button.warning { background: #FF9800; color: #000; }
+        button.small { padding: 6px 14px; font-size: 11px; border-radius: 8px; }
+        .product-item, .category-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.04); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(200,168,122,0.08); gap: 12px; }
+        .product-item.selected { border-color: #c8a87a; background: rgba(200,168,122,0.1); }
+        .product-checkbox { width: auto !important; margin: 0 !important; cursor: pointer; accent-color: #c8a87a; min-width: 18px; height: 18px; }
+        .product-info, .cat-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+        .product-name { font-weight: 600; color: #fff; font-size: 14px; }
+        .product-details { font-size: 11px; color: #888; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+        .product-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .cat-id { background: rgba(200,168,122,0.15); color: #c8a87a; padding: 2px 8px; border-radius: 12px; font-size: 11px; cursor: pointer; transition: 0.3s; }
+        .cat-id:hover { background: rgba(200,168,122,0.3); }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10px; margin-right: 4px; }
+        .badge-brand { background: rgba(200, 168, 122, 0.2); color: #dbb98c; }
+        .badge-cat { background: rgba(200, 168, 122, 0.15); color: #c8a87a; }
+        .subcategory { margin-left: 30px; border-left: 2px solid rgba(200,168,122,0.1); padding-left: 15px; }
+        .export-section { background: rgba(200, 168, 122, 0.05); border: 1px solid rgba(200, 168, 122, 0.3); text-align: center; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px 10px; text-align: center; border: 1px solid rgba(200,168,122,0.1); }
+        .stat-number { font-size: 28px; font-weight: 700; color: #c8a87a; }
+        .stat-label { font-size: 11px; color: #888; margin-top: 5px; text-transform: uppercase; }
+        .order-search { display: flex; gap: 10px; margin-bottom: 15px; }
+        .order-search input { flex: 1; margin-bottom: 0; }
+        .order-list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(200,168,122,0.08); cursor: pointer; transition: 0.3s; }
+        .order-list-item:hover { background: rgba(200,168,122,0.06); border-color: rgba(200,168,122,0.2); }
+        .order-list-left { display: flex; align-items: center; gap: 15px; }
+        .order-list-number { font-weight: 700; color: #c8a87a; font-size: 15px; }
+        .order-list-total { font-weight: 600; color: #dbb98c; font-size: 16px; }
+        .order-list-date { font-size: 11px; color: #888; }
+        .order-list-status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+        .status-processing { background: rgba(255,152,0,0.2); color: #FFB74D; }
+        .status-calling { background: rgba(33,150,243,0.2); color: #64B5F6; }
+        .status-delivery { background: rgba(76,175,80,0.2); color: #81C784; }
+        .status-done { background: rgba(200,168,122,0.2); color: #dbb98c; }
+        .order-detail { display: none; padding: 16px 20px; margin: -4px 0 8px 0; background: rgba(200,168,122,0.03); border-radius: 0 0 12px 12px; border: 1px solid rgba(200,168,122,0.1); border-top: none; }
+        .order-detail.open { display: block; }
+        .order-detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #aaa; }
+        .order-detail-row span:last-child { color: #f5f0eb; font-weight: 500; }
+        .order-detail-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+        .order-detail-actions select { width: auto; padding: 8px 32px 8px 12px; font-size: 12px; margin-bottom: 0; border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(200,168,122,0.2); }
+        .toast { position: fixed; top: 20px; right: 20px; background: #c8a87a; color: #0b0b0b; padding: 15px 25px; border-radius: 10px; z-index: 9999; animation: slideIn 0.3s ease; font-weight: 600; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        textarea { min-height: 60px; resize: vertical; }
+        .import-hint { color: #888; font-size: 11px; margin-top: -8px; margin-bottom: 12px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .modal { background: #1a1410; border-radius: 16px; padding: 25px; max-width: 550px; width: 90%; border: 1px solid rgba(200,168,122,0.3); max-height: 90vh; overflow-y: auto; }
+        .modal h2 { color: #c8a87a; margin-bottom: 20px; }
+        .modal .btn-row { display: flex; gap: 10px; margin-top: 15px; }
+        .modal label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>⚙️ Админ-панель ВитБьюти</h1>
+        
+        <div class="section"><h2>📊 Статистика</h2><div class="stats" id="statsContainer"></div></div>
+        <div class="section"><h2>📋 Заказы</h2><div class="order-search"><input type="text" id="orderSearchInput" placeholder="🔍 Поиск по номеру заказа..."><button class="small" onclick="searchOrders()">Найти</button><button class="small" onclick="resetOrderSearch()">Все</button></div><div id="ordersAdminList"></div></div>
+        
+        <div class="section"><h2>➕ Добавить товар</h2>
+            <form id="addProductForm">
+                <input type="text" id="productName" placeholder="Название товара *" required>
+                <input type="text" id="productArticle" placeholder="Артикул">
+                <select id="productBrand" required><option value="">Бренд *</option><option value="HAIR SEKTA">HAIR SEKTA</option><option value="IMPRESSION PROFESSIONAL">IMPRESSION PROFESSIONAL</option><option value="MALECULA">MALECULA</option><option value="ЧИСТОВЬЕ">ЧИСТОВЬЕ</option></select>
+                <select id="productCategory"><option value="">Без категории</option></select>
+                <input type="text" id="productPrice" placeholder="Цена *" required>
+                <input type="text" id="productOldPrice" placeholder="Старая цена">
+                <input type="text" id="productImg" placeholder="Ссылка на фото">
+                <textarea id="productDesc" placeholder="Описание"></textarea>
+                <button type="submit">➕ Добавить</button>
+            </form>
+        </div>
+        
+        <div class="section"><h2>📂 Категории</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;"><div><h3>➕ Категория</h3><input type="text" id="newCatName" placeholder="Название"><select id="newCatBrand"><option value="">Бренд</option><option value="HAIR SEKTA">HAIR SEKTA</option><option value="IMPRESSION PROFESSIONAL">IMPRESSION PROFESSIONAL</option><option value="MALECULA">MALECULA</option><option value="ЧИСТОВЬЕ">ЧИСТОВЬЕ</option></select><button onclick="addCategory()">➕</button></div><div><h3>📁 Подкатегория</h3><select id="parentCatSelect"><option value="">Родительская</option></select><input type="text" id="newSubCatName" placeholder="Название"><button onclick="addSubCategory()">➕</button></div></div><h3>Список</h3><div id="categoryList"></div></div>
+        
+        <div class="section"><h2>📦 Товары</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#aaa;">
+                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" style="width:auto;margin:0;accent-color:#c8a87a;"> Выбрать все
+                    </label>
+                    <span id="selectedCount" style="font-size:12px;color:#888;"></span>
+                </div>
+                <button class="danger small" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;">🗑️ Удалить выбранные</button>
+            </div>
+            <div id="productList"></div>
+        </div>
+        
+        <div class="section export-section">
+            <h2>📥 Экспорт</h2>
+            <button class="success" onclick="exportAllCSV()">📥 Скачать CSV</button>
+            <button class="success" onclick="exportAllExcel()">📥 Скачать Excel</button>
+            <button class="info" onclick="exportByBrand()">📥 По брендам</button>
+            <button class="info" onclick="exportCategories()">📥 Все категории</button>
+            <button class="info" onclick="exportAddedCategories()">📥 Добавленные категории</button>
+            <br><br>
+            <h3>📤 Импорт Excel/CSV</h3>
+            <p style="color:#ccc;font-size:13px;margin-bottom:5px;">
+                Колонки: <b>Бренд | ID КАТ | Артикул | Название | Категория | Подкатегория | Цена | Старая цена | Тег | Фото | Описание</b>
+            </p>
+            <p class="import-hint">
+                🔹 <b>Подкатегория</b> — приоритет (если указана, товар идёт в неё)<br>
+                🔹 <b>Категория</b> — если Подкатегория пустая<br>
+                🔹 Поиск только внутри указанного <b>Бренда</b><br>
+                🔹 Если не найдено — создаётся новая категория
+            </p>
+            <input type="file" id="mainFileInput" accept=".csv,.xlsx,.xls" style="display:inline-block;width:auto;">
+            <button class="info" onclick="importFile()">📤 Загрузить</button>
+            <br><br>
+            <h3>📤 Собрать несколько файлов</h3>
+            <input type="file" id="multiFileInput" accept=".csv,.xlsx,.xls" multiple style="display:inline-block;width:auto;"><br>
+            <button class="info" onclick="mergeFiles('add')">📤 Собрать и добавить</button>
+            <button class="success" onclick="mergeFiles('csv')">📥 Скачать CSV</button>
+            <button class="success" onclick="mergeFiles('excel')">📥 Скачать Excel</button>
+            <br><br>
+            <button class="info" onclick="autoImportCSV()">🔄 Обновить из data/</button>
+            <button class="danger small" onclick="clearAll()">🗑️ Очистить всё</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editModal" style="display:none;">
+        <div class="modal">
+            <h2>✏️ Редактировать товар</h2>
+            <input type="hidden" id="editProductId">
+            <input type="hidden" id="editProductBrand">
+            <label>Название</label><input type="text" id="editName">
+            <label>Артикул</label><input type="text" id="editArticle">
+            <label>Цена</label><input type="text" id="editPrice">
+            <label>Старая цена</label><input type="text" id="editOldPrice">
+            <label>Ссылка на фото</label><input type="text" id="editImg">
+            <label>Категория</label><select id="editCategory"><option value="">Без категории</option></select>
+            <label>Описание</label><textarea id="editDesc"></textarea>
+            <div class="btn-row"><button onclick="saveEdit()">💾 Сохранить</button><button class="danger" onclick="closeEditModal()">Отмена</button></div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'vitbeauty_products';
+        const CATEGORIES_KEY = 'vitbeauty_categories_v2';
+        const ORDERS_KEY = 'vitbeauty_orders_history';
+        const BRAND_NAMES = ['HAIR SEKTA', 'IMPRESSION PROFESSIONAL', 'MALECULA', 'ЧИСТОВЬЕ'];
+        
+        const brandCatalog = { 'HAIR SEKTA': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'IMPRESSION PROFESSIONAL': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'MALECULA': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'ЧИСТОВЬЕ': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] } };
+        
+        let selectedProducts = new Set();
+        
+        function getParentCategoryName(brand, subCatId) {
+            const sub = brandCatalog[brand].categories.find(c => c.id === subCatId);
+            if (!sub || !sub.parent) return '';
+            if (sub.parent === 'all') return 'Все товары';
+            if (sub.parent === 'new') return 'Новинки';
+            const parent = brandCatalog[brand].categories.find(c => c.id === sub.parent);
+            return parent ? parent.label : '';
+        }
+        
+        function findOrCreateCategory(brand, categoryName, subCategoryName) {
+            const cats = brandCatalog[brand].categories;
+            if (subCategoryName && subCategoryName.trim()) {
+                const cleanSub = subCategoryName.trim();
+                let found = cats.find(c => c.parent && c.id !== 'all' && c.id !== 'new' && c.label.toLowerCase() === cleanSub.toLowerCase());
+                if (found) return { id: found.id, name: found.label, parentName: getParentCategoryName(brand, found.id) };
+                found = cats.find(c => !c.parent && c.id !== 'all' && c.id !== 'new' && c.label.toLowerCase() === cleanSub.toLowerCase());
+                if (found) return { id: found.id, name: found.label, parentName: '' };
+                let parentId = null, parentName = '';
+                if (categoryName && categoryName.trim()) {
+                    const parentResult = findOrCreateMainCategory(brand, categoryName.trim());
+                    parentId = parentResult.id; parentName = parentResult.name;
+                } else {
+                    const existingMain = cats.find(c => !c.parent && c.id !== 'all' && c.id !== 'new');
+                    if (existingMain) { parentId = existingMain.id; parentName = existingMain.label; }
+                    else { const newParent = findOrCreateMainCategory(brand, 'Прочее'); parentId = newParent.id; parentName = newParent.name; }
+                }
+                const newSubId = parentId + '_sub_' + cleanSub.replace(/\s/g, '_');
+                if (!cats.find(c => c.id === newSubId)) { brandCatalog[brand].categories.push({ id: newSubId, label: cleanSub, parent: parentId }); }
+                return { id: newSubId, name: cleanSub, parentName: parentName };
+            }
+            if (categoryName && categoryName.trim()) {
+                const result = findOrCreateMainCategory(brand, categoryName.trim());
+                return { id: result.id, name: result.name, parentName: '' };
+            }
+            return { id: '', name: 'Все товары', parentName: '' };
+        }
+        
+        function findOrCreateMainCategory(brand, categoryName) {
+            const cats = brandCatalog[brand].categories;
+            const cleanName = categoryName.trim();
+            let found = cats.find(c => !c.parent && c.id !== 'all' && c.id !== 'new' && c.label.toLowerCase() === cleanName.toLowerCase());
+            if (found) return { id: found.id, name: found.label };
+            const newId = 'cat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            brandCatalog[brand].categories.push({ id: newId, label: cleanName, parent: null });
+            return { id: newId, name: cleanName };
+        }
+        
+        function loadData() {
+            const p = localStorage.getItem(STORAGE_KEY), c = localStorage.getItem(CATEGORIES_KEY);
+            if (p) try { JSON.parse(p).forEach(x => { if (x.brand && brandCatalog[x.brand] && !brandCatalog[x.brand].products.find(e => e.id === x.id)) brandCatalog[x.brand].products.push(x); }); } catch(e) {}
+            if (c) try { Object.entries(JSON.parse(c)).forEach(([b, cats]) => { if (brandCatalog[b]) { cats.forEach(cat => { if (!brandCatalog[b].categories.find(x => x.id === cat.id)) brandCatalog[b].categories.push({ id: cat.id, label: cat.name, parent: null }); if (cat.children) cat.children.forEach(sub => { const sid = cat.id + '_sub_' + sub.replace(/\s/g, '_'); if (!brandCatalog[b].categories.find(x => x.id === sid)) brandCatalog[b].categories.push({ id: sid, label: sub, parent: cat.id }); }); }); } }); } catch(e) {}
+       // Загрузка заказов с сервера
+fetch('https://vitbeauty-server.onrender.com/orders')
+    .then(function(r) { return r.json(); })
+    .then(function(orders) {
+        if (orders && orders.length) {
+            localStorage.setItem('vitbeauty_orders_v2', JSON.stringify(orders));
+            renderOrdersAdmin();
+        }
+    })
+    .catch(function(e) {
+        console.log('Ошибка загрузки с сервера:', e);
+    }); }
+        
+        function saveData() {
+            const all = [];
+            Object.values(brandCatalog).forEach(d => d.products.forEach(p => all.push(p)));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+            const cats = {};
+            Object.entries(brandCatalog).forEach(([b, d]) => {
+                const arr = d.categories.filter(c => c.id !== 'all' && c.id !== 'new').map(c => ({ id: c.id, name: c.label, parent: c.parent || null, children: [] }));
+                const main = arr.filter(c => !c.parent);
+                arr.filter(c => c.parent).forEach(s => { const p = main.find(x => x.id === s.parent); if (p) { if (!p.children) p.children = []; p.children.push(s.name); } });
+                if (main.length) cats[b] = main;
+            });
+            localStorage.setItem(CATEGORIES_KEY, JSON.stringify(cats));
+        }
+        
+        function renderAll() { renderStats(); renderProducts(); renderCategories(); renderOrdersAdmin(); updateSelects(); updateEditCategorySelect(); }
+        
+        function renderStats() {
+            let t = 0; const brands = [];
+            Object.entries(brandCatalog).forEach(([b, d]) => { t += d.products.length; brands.push({ name: b, count: d.products.length }); });
+            document.getElementById('statsContainer').innerHTML = `<div class="stat-card"><div class="stat-number">${t}</div><div class="stat-label">Всего товаров</div></div>${brands.map(b => `<div class="stat-card"><div class="stat-number">${b.count}</div><div class="stat-label">${b.name}</div></div>`).join('')}`;
+        }
+        
+        function renderProducts() {
+            const c = document.getElementById('productList');
+            const all = [];
+            Object.entries(brandCatalog).forEach(([b, d]) => d.products.forEach(p => all.push({ ...p, brand: b })));
+            const selCount = selectedProducts.size;
+            document.getElementById('selectedCount').textContent = selCount > 0 ? `Выбрано: ${selCount}` : '';
+            document.getElementById('deleteSelectedBtn').style.display = selCount > 0 ? 'inline-block' : 'none';
+            c.innerHTML = all.length ? all.map(p => {
+                const isSelected = selectedProducts.has(p.id);
+                const parentCat = p.categoryId ? getParentCategoryName(p.brand, p.categoryId) : '';
+                const displayCat = parentCat ? parentCat + ' → ' + p.category : p.category;
+                return `<div class="product-item ${isSelected ? 'selected' : ''}" data-id="${p.id}">
+                    <input type="checkbox" class="product-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleProductSelect('${p.id}')" onclick="event.stopPropagation();">
+                    <div class="product-info" onclick="openEditModal('${p.id}')" style="cursor:pointer;">
+                        <span class="product-name">${p.name}</span>
+                        <span class="product-details">
+                            <span class="badge badge-brand">${p.brand}</span>
+                            ${p.article ? '<span style="color:#aaa;">Арт: ' + p.article + '</span>' : ''}
+                            <span class="badge badge-cat">${displayCat || 'Без категории'}</span> | ${p.price}
+                        </span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="warning small" onclick="event.stopPropagation(); openEditModal('${p.id}')">✏️</button>
+                        <button class="danger small" onclick="event.stopPropagation(); deleteProduct('${p.id}')">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('') : '<p style="color:#666;text-align:center;padding:20px;">Товаров пока нет</p>';
+            document.getElementById('selectAllCheckbox').checked = all.length > 0 && selectedProducts.size === all.length;
+        }
+        
+        function toggleProductSelect(id) { if (selectedProducts.has(id)) selectedProducts.delete(id); else selectedProducts.add(id); renderProducts(); }
+        
+        function toggleSelectAll() {
+            const all = [];
+            Object.entries(brandCatalog).forEach(([b, d]) => d.products.forEach(p => all.push(p.id)));
+            const checked = document.getElementById('selectAllCheckbox').checked;
+            if (checked) all.forEach(id => selectedProducts.add(id));
+            else selectedProducts.clear();
+            renderProducts();
+        }
+        
+        function deleteSelected() {
+            if (selectedProducts.size === 0) return;
+            if (!confirm(`Удалить ${selectedProducts.size} выбранных товаров?`)) return;
+            Object.values(brandCatalog).forEach(d => d.products = d.products.filter(p => !selectedProducts.has(p.id)));
+            selectedProducts.clear();
+            saveData(); renderAll();
+            showToast('🗑️ Выбранные товары удалены');
+        }
+        
+        function renderCategories() {
+            const c = document.getElementById('categoryList'); 
+            let h = '';
+            Object.entries(brandCatalog).forEach(([b, d]) => {
+                ['all', 'new'].forEach(function(sysId) {
+                    const sysCat = d.categories.find(c => c.id === sysId);
+                    if (sysCat) {
+                        const subs = d.categories.filter(c => c.parent === sysId);
+                        if (subs.length > 0) {
+                            h += `<div class="category-item"><div class="cat-info"><span class="badge badge-brand">${b}</span><span style="color:#fff;">${sysCat.label}</span><span class="cat-id" onclick="copyToClipboard('${sysCat.id}')">🆔 ${sysCat.id}</span><span style="font-size:12px;color:#888;">(${subs.length})</span></div></div>`;
+                            subs.forEach(sub => { 
+                                h += `<div class="category-item subcategory"><div class="cat-info"><span style="color:#fff;">└─ ${sub.label}</span><span class="cat-id" onclick="copyToClipboard('${sub.id}')">🆔 ${sub.id}</span></div><button class="danger small" onclick="deleteCategory('${b}','${sub.id}')">🗑️</button></div>`; 
+                            });
+                        }
+                    }
+                });
+                d.categories.filter(cat => !cat.parent && cat.id !== 'all' && cat.id !== 'new').forEach(cat => {
+                    const subs = d.categories.filter(c => c.parent === cat.id);
+                    h += `<div class="category-item"><div class="cat-info"><span class="badge badge-brand">${b}</span><span style="color:#fff;">${cat.label}</span><span class="cat-id" onclick="copyToClipboard('${cat.id}')">🆔 ${cat.id}</span>${subs.length ? '<span style="font-size:12px;color:#888;">(' + subs.length + ')</span>' : ''}</div><button class="danger small" onclick="deleteCategory('${b}','${cat.id}')">🗑️</button></div>`;
+                    subs.forEach(sub => { 
+                        h += `<div class="category-item subcategory"><div class="cat-info"><span style="color:#fff;">└─ ${sub.label}</span><span class="cat-id" onclick="copyToClipboard('${sub.id}')">🆔 ${sub.id}</span></div><button class="danger small" onclick="deleteCategory('${b}','${sub.id}')">🗑️</button></div>`; 
+                    });
+                });
+            });
+            c.innerHTML = h || '<p style="color:#666;padding:20px;">Категорий пока нет</p>';
+        }
+        
+        function updateSelects() {
+            const cs = document.getElementById('productCategory'), ps = document.getElementById('parentCatSelect');
+            if (cs) { 
+                cs.innerHTML = '<option value="">Без категории</option>'; 
+                Object.entries(brandCatalog).forEach(([b, d]) => { 
+                    cs.innerHTML += `<option value="all|${b}">Все товары (${b})</option>`;
+                    cs.innerHTML += `<option value="new|${b}">Новинки (${b})</option>`;
+                    d.categories.filter(c => !c.parent && c.id !== 'all' && c.id !== 'new').forEach(cat => cs.innerHTML += `<option value="${cat.id}|${b}">${cat.label} (${b})</option>`); 
+                    d.categories.filter(c => c.parent).forEach(sub => { 
+                        const pn = getParentCategoryName(b, sub.id); 
+                        cs.innerHTML += `<option value="${sub.id}|${b}">└─ ${pn ? pn + ' → ' : ''}${sub.label} (${b})</option>`; 
+                    }); 
+                }); 
+            }
+            if (ps) { 
+                ps.innerHTML = '<option value="">Родительская</option>'; 
+                Object.entries(brandCatalog).forEach(([b, d]) => { 
+                    ps.innerHTML += `<option value="all|${b}">📦 Все товары (${b})</option>`;
+                    ps.innerHTML += `<option value="new|${b}">✨ Новинки (${b})</option>`;
+                    d.categories.filter(c => !c.parent && c.id !== 'all' && c.id !== 'new').forEach(cat => ps.innerHTML += `<option value="${cat.id}|${b}">${cat.label} (${b})</option>`); 
+                }); 
+            }
+        }
+        
+        function updateEditCategorySelect() {
+            const cs = document.getElementById('editCategory');
+            if (cs) { 
+                cs.innerHTML = '<option value="">Без категории</option>'; 
+                Object.entries(brandCatalog).forEach(([b, d]) => { 
+                    cs.innerHTML += `<option value="all|${b}">Все товары (${b})</option>`;
+                    cs.innerHTML += `<option value="new|${b}">Новинки (${b})</option>`;
+                    d.categories.filter(c => !c.parent && c.id !== 'all' && c.id !== 'new').forEach(cat => cs.innerHTML += `<option value="${cat.id}|${b}">${cat.label} (${b})</option>`); 
+                    d.categories.filter(c => c.parent).forEach(sub => { 
+                        const pn = getParentCategoryName(b, sub.id); 
+                        cs.innerHTML += `<option value="${sub.id}|${b}">└─ ${pn ? pn + ' → ' : ''}${sub.label} (${b})</option>`; 
+                    }); 
+                }); 
+            }
+        }
+        
+        function openEditModal(pid) {
+            const all = [];
+            Object.entries(brandCatalog).forEach(([b, d]) => d.products.forEach(p => all.push({ ...p, brand: b })));
+            const product = all.find(p => p.id === pid);
+            if (!product) return;
+            document.getElementById('editProductId').value = product.id;
+            document.getElementById('editProductBrand').value = product.brand;
+            document.getElementById('editName').value = product.name;
+            document.getElementById('editArticle').value = product.article || '';
+            document.getElementById('editPrice').value = product.price || '';
+            document.getElementById('editOldPrice').value = product.oldPrice || '';
+            document.getElementById('editImg').value = product.img || '';
+            document.getElementById('editDesc').value = product.description || '';
+            updateEditCategorySelect();
+            document.getElementById('editCategory').value = (product.categoryId ? product.categoryId + '|' + product.brand : '');
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+        
+        function saveEdit() {
+            const id = document.getElementById('editProductId').value;
+            const brand = document.getElementById('editProductBrand').value;
+            const name = document.getElementById('editName').value.trim();
+            const article = document.getElementById('editArticle').value.trim();
+            const price = document.getElementById('editPrice').value.trim();
+            const oldPrice = document.getElementById('editOldPrice').value.trim();
+            const img = document.getElementById('editImg').value.trim();
+            const desc = document.getElementById('editDesc').value.trim();
+            const rawCatId = document.getElementById('editCategory').value;
+            if (!name || !price) return showToast('Название и цена обязательны!');
+            const product = brandCatalog[brand].products.find(p => p.id === id);
+            if (!product) return showToast('Товар не найден!');
+            product.name = name;
+            product.article = article;
+            product.price = price.includes('BYN') ? price : price + ' BYN';
+            product.oldPrice = oldPrice || null;
+            product.img = img || 'https://i.ibb.co/p7YgvT8/images.jpg';
+            product.description = desc;
+            if (rawCatId) {
+                const parts = rawCatId.split('|');
+                const catId = parts[0];
+                const catObj = brandCatalog[brand].categories.find(c => c.id === catId);
+                if (catObj) { 
+                    product.categoryId = catId; 
+                    if (catId === 'all' || catId === 'new') {
+                        product.category = catObj.label;
+                    } else {
+                        const parentCat = catObj.parent ? getParentCategoryName(brand, catId) : '';
+                        product.category = parentCat ? parentCat + ' → ' + catObj.label : catObj.label;
+                    }
+                }
+            } else { 
+                product.categoryId = ''; 
+                product.category = 'Все товары'; 
+            }
+            saveData(); renderAll(); closeEditModal();
+            showToast('✅ Товар обновлён!');
+        }
+        
+        document.getElementById('editModal').addEventListener('click', function(e) { if (e.target === this) closeEditModal(); });
+        
+        document.getElementById('addProductForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const brand = document.getElementById('productBrand').value, name = document.getElementById('productName').value.trim(), price = document.getElementById('productPrice').value.trim();
+            if (!brand || !name || !price) return showToast('Заполните поля!');
+            const cs = document.getElementById('productCategory');
+            let cn = 'Все товары', ci = '';
+            if (cs.value) { 
+                const parts = cs.value.split('|');
+                ci = parts[0];
+                const catObj = brandCatalog[brand].categories.find(c => c.id === ci);
+                if (catObj) {
+                    cn = catObj.label;
+                } else {
+                    cn = cs.selectedOptions[0].text.split(' (')[0];
+                }
+            }
+            const p = { id: 'prod_' + Date.now(), name, article: document.getElementById('productArticle').value.trim() || '', brand, price: price.includes('BYN') ? price : price + ' BYN', oldPrice: document.getElementById('productOldPrice').value.trim() || null, category: cn, categoryId: ci, tag: null, img: document.getElementById('productImg').value.trim() || 'https://i.ibb.co/p7YgvT8/images.jpg', description: document.getElementById('productDesc').value.trim() || '' };
+            brandCatalog[brand].products.push(p);
+            saveData(); renderAll();
+            this.reset();
+            showToast('Добавлен!');
+        });
+        
+        function deleteProduct(id) { if (!confirm('Удалить товар?')) return; Object.values(brandCatalog).forEach(d => d.products = d.products.filter(p => p.id !== id)); selectedProducts.delete(id); saveData(); renderAll(); showToast('🗑️ Товар удалён'); }
+        function addCategory() { const n = document.getElementById('newCatName').value.trim(), b = document.getElementById('newCatBrand').value; if (!n || !b) return showToast('Заполните!'); brandCatalog[b].categories.push({ id: 'cat_' + Date.now(), label: n, parent: null }); saveData(); renderAll(); document.getElementById('newCatName').value = ''; }
+        
+        function addSubCategory() {
+            const rawValue = document.getElementById('parentCatSelect').value;
+            const n = document.getElementById('newSubCatName').value.trim();
+            if (!n || !rawValue) return showToast('Заполните!');
+            const parts = rawValue.split('|');
+            const pid = parts[0];
+            const fb = parts[1];
+            if (!brandCatalog[fb]) return showToast('Бренд не найден!');
+            const sid = pid + '_sub_' + n.replace(/\s/g, '_');
+            if (brandCatalog[fb].categories.find(c => c.id === sid)) return showToast('❌ Такая подкатегория уже есть');
+            brandCatalog[fb].categories.push({ id: sid, label: n, parent: pid });
+            saveData(); renderAll();
+            document.getElementById('newSubCatName').value = '';
+            showToast('✅ Подкатегория добавлена');
+        }
+        
+        function deleteCategory(brand, id) { if (!confirm('Удалить категорию и все подкатегории?')) return; brandCatalog[brand].categories = brandCatalog[brand].categories.filter(c => c.id !== id && c.parent !== id); saveData(); renderAll(); }
+        function clearAll() { if (confirm('Удалить ВСЕ товары?')) { Object.values(brandCatalog).forEach(d => d.products = []); selectedProducts.clear(); saveData(); renderAll(); } }
+        function copyToClipboard(t) { navigator.clipboard?.writeText(t).then(() => showToast('📋 ' + t)).catch(() => { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }); }
+        
+        function getAllOrders() { return JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]'); }
+        function searchOrders() { renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); }
+        function resetOrderSearch() { document.getElementById('orderSearchInput').value = ''; renderOrdersAdmin(); }
+        function renderOrdersAdmin(q) {
+            const c = document.getElementById('ordersAdminList');
+            let orders = getAllOrders();
+            if (!orders.length) { c.innerHTML = '<p style="color:#666;padding:20px;">Заказов пока нет</p>'; return; }
+            if (q) { orders = orders.filter(o => o.number.toLowerCase().includes(q.toLowerCase())); if (!orders.length) { c.innerHTML = '<p style="color:#666;padding:20px;">Не найдены</p>'; return; } }
+            c.innerHTML = orders.reverse().map(o => `<div class="order-list-item" onclick="toggleOrderDetail('${o.number}')"><div class="order-list-left"><div class="order-list-number">#${o.number}</div><div class="order-list-total">${o.total} BYN</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="order-list-date">${o.date}</div><span class="order-list-status status-${o.status}">${{processing:'⏳ В обработке',calling:'📞 Звонок',delivery:'🚚 Доставка',done:'✅ Завершён'}[o.status]||'В обработке'}</span></div></div><div class="order-detail" id="detail-${o.number}"><div class="order-detail-row"><span>Клиент:</span><span>${o.name}</span></div><div class="order-detail-row"><span>Телефон:</span><span>${o.phone}</span></div><div class="order-detail-row"><span>Товары:</span><span>${o.items}</span></div><div class="order-detail-row"><span>Сумма:</span><span>${o.total} BYN</span></div><div class="order-detail-actions"><span style="font-size:12px;color:#888;">Статус:</span><select onchange="changeOrderStatus('${o.number}',this.value)" onclick="event.stopPropagation();"><option value="processing" ${o.status==='processing'?'selected':''}>⏳ В обработке</option><option value="calling" ${o.status==='calling'?'selected':''}>📞 Звонок</option><option value="delivery" ${o.status==='delivery'?'selected':''}>🚚 Доставка</option><option value="done" ${o.status==='done'?'selected':''}>✅ Завершён</option></select></div></div>`).join('');
+        }
+        function toggleOrderDetail(n) { const d = document.getElementById('detail-' + n), i = d.previousElementSibling; if (d.classList.contains('open')) { d.classList.remove('open'); i.style.borderRadius = '12px'; } else { document.querySelectorAll('.order-detail.open').forEach(x => { x.classList.remove('open'); x.previousElementSibling.style.borderRadius = '12px'; }); d.classList.add('open'); i.style.borderRadius = '12px 12px 0 0'; } }
+        function changeOrderStatus(n, s) { const orders = getAllOrders(); const o = orders.find(x => x.number === n); if (o) { o.status = s; localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); } }
+        
+        function downloadFile(content, filename, type = 'text/csv;charset=utf-8;') { const blob = new Blob(['\uFEFF' + content], { type }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+        function getAllProductsArray() { const all = []; Object.entries(brandCatalog).forEach(([brand, data]) => { data.products.forEach(p => all.push({ ...p, brand })); }); return all; }
+        function exportAllCSV() { const products = getAllProductsArray(); let csv = 'Бренд;ID КАТ;Артикул;Название;Категория;Подкатегория;Цена;Старая цена;Тег;Фото;Описание\n'; products.forEach(p => { const parentCat = p.categoryId ? getParentCategoryName(p.brand, p.categoryId) : ''; const subCat = parentCat ? p.category.split(' → ').pop() : ''; const mainCat = parentCat || (p.category.includes(' → ') ? p.category.split(' → ')[0] : p.category); csv += [p.brand, p.categoryId||'', p.article||'', p.name, mainCat, subCat, p.price||'', p.oldPrice||'', p.tag||'', p.img||'', (p.description||'').replace(/;/g,',')].join(';') + '\n'; }); downloadFile(csv, 'all_products.csv'); showToast('✅ CSV скачан!'); }
+        function exportAllExcel() { const products = getAllProductsArray(); const data = products.map(p => { const parentCat = p.categoryId ? getParentCategoryName(p.brand, p.categoryId) : ''; const subCat = parentCat ? p.category.split(' → ').pop() : ''; const mainCat = parentCat || (p.category.includes(' → ') ? p.category.split(' → ')[0] : p.category); return { 'Бренд': p.brand, 'ID КАТ': p.categoryId || '', 'Артикул': p.article || '', 'Название': p.name, 'Категория': mainCat, 'Подкатегория': subCat, 'Цена': p.price || '', 'Старая цена': p.oldPrice || '', 'Тег': p.tag || '', 'Фото': p.img || '', 'Описание': p.description || '' }; }); const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Товары'); XLSX.writeFile(wb, 'all_products.xlsx'); showToast('✅ Excel скачан!'); }
+        function exportByBrand() { const brands = Object.entries(brandCatalog).filter(([b,d]) => d.products.length > 0); if (!brands.length) return showToast('Нет товаров!'); const overlay = document.createElement('div'); overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;'; overlay.innerHTML = `<div style="background:#1a1410;border-radius:20px;padding:30px;max-width:500px;width:90%;border:1px solid rgba(200,168,122,0.3);"><h2 style="color:#c8a87a;">📥 Выберите бренд</h2>${brands.map(([b,d]) => `<div onclick="exportSingleBrand('${b}');this.parentElement.parentElement.remove();" style="padding:15px;cursor:pointer;margin:10px 0;background:rgba(255,255,255,0.05);border-radius:10px;">${b} (${d.products.length})</div>`).join('')}</div>`; document.body.appendChild(overlay); overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); }); }
+        function exportSingleBrand(brand) { const data = brandCatalog[brand]; if (!data) return; let csv = 'Бренд;ID КАТ;Артикул;Название;Категория;Подкатегория;Цена;Старая цена;Тег;Фото;Описание\n'; data.products.forEach(p => { const parentCat = p.categoryId ? getParentCategoryName(brand, p.categoryId) : ''; const subCat = parentCat ? p.category.split(' → ').pop() : ''; const mainCat = parentCat || (p.category.includes(' → ') ? p.category.split(' → ')[0] : p.category); csv += [brand, p.categoryId||'', p.article||'', p.name, mainCat, subCat, p.price||'', p.oldPrice||'', p.tag||'', p.img||'', (p.description||'').replace(/;/g,',')].join(';') + '\n'; }); downloadFile(csv, brand.replace(/\s/g,'_')+'.csv'); showToast('✅ Скачано!'); }
+        function exportCategories() { let csv = 'Бренд;ID категории;Название;Тип;Родитель\n'; Object.entries(brandCatalog).forEach(([b, d]) => d.categories.filter(c => c.id !== 'all' && c.id !== 'new').forEach(c => csv += `${b};${c.id};${c.label};${c.parent?'Подкатегория':'Категория'};${c.parent||''}\n`)); downloadFile(csv, 'categories.csv'); showToast('Категории экспортированы!'); }
+        
+        function exportAddedCategories() {
+            let csv = 'Бренд;ID категории;Название;Тип;Родитель\n';
+            let count = 0;
+            Object.entries(brandCatalog).forEach(function([brand, data]) {
+                data.categories
+                    .filter(function(cat) { return !cat.parent && cat.id !== 'all' && cat.id !== 'new'; })
+                    .forEach(function(cat) {
+                        csv += brand + ';' + cat.id + ';' + cat.label + ';Категория;\n';
+                        count++;
+                        data.categories
+                            .filter(function(sub) { return sub.parent === cat.id; })
+                            .forEach(function(sub) {
+                                csv += brand + ';' + sub.id + ';' + sub.label + ';Подкатегория;' + cat.id + '\n';
+                                count++;
+                            });
+                    });
+            });
+            if (count === 0) return showToast('❌ Нет добавленных категорий');
+            downloadFile(csv, 'categories.csv');
+            showToast('✅ Категории скачаны (' + count + ')');
+        }
+        
+        function parseFileToLines(text) { const firstLine = text.split('\n')[0] || ''; let delimiter = ';'; if (firstLine.split('\t').length > firstLine.split(';').length) delimiter = '\t'; return { lines: text.split('\n').filter(l => l.trim()), delimiter }; }
+        function findColumnIndex(headers, ...names) { for (const name of names) { const idx = headers.findIndex(h => h && h.toLowerCase().trim() === name.toLowerCase()); if (idx >= 0) return idx; } return -1; }
+        
+        function importFile() {
+            const file = document.getElementById('mainFileInput').files[0];
+            if (!file) return showToast('❌ Выберите файл!');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                let text = '';
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    try { const wb = XLSX.read(e.target.result, { type: 'array' }); text = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]], { FS: '\t' }); } catch(err) { return showToast('❌ Ошибка чтения Excel!'); }
+                } else { text = e.target.result.replace(/^\uFEFF/, ''); }
+                
+                const { lines, delimiter } = parseFileToLines(text);
+                if (lines.length < 2) return showToast('❌ Файл пустой!');
+                const headers = lines[0].split(delimiter).map(h => h.trim());
+                
+                const brandIdx = findColumnIndex(headers, 'Бренд', 'бренд', 'brand');
+                const catIdx = findColumnIndex(headers, 'Категория', 'категория', 'category');
+                const subCatIdx = findColumnIndex(headers, 'Подкатегория', 'подкатегория', 'subcategory');
+                const nameIdx = findColumnIndex(headers, 'Название', 'название', 'Наименование', 'Номенклатура');
+                const priceIdx = findColumnIndex(headers, 'Цена', 'цена', 'Розничная');
+                const oldPriceIdx = findColumnIndex(headers, 'Старая цена', 'старая цена', 'old price');
+                const descIdx = findColumnIndex(headers, 'Описание', 'описание');
+                const artIdx = findColumnIndex(headers, 'Артикул', 'артикул');
+                const tagIdx = findColumnIndex(headers, 'Тег', 'тег', 'tag');
+                const imgIdx = findColumnIndex(headers, 'Фото', 'фото', 'img', 'image');
+                const catIdIdx = findColumnIndex(headers, 'ID КАТ', 'id кат', 'category id');
+                
+                if (nameIdx === -1 || priceIdx === -1) return showToast('❌ Не найдены Название или Цена!');
+                
+                let count = 0, skipped = 0;
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(delimiter).map(v => v.trim());
+                    const name = cols[nameIdx] || '';
+                    const priceRaw = (cols[priceIdx] || '').replace(',', '.');
+                    const brandRaw = brandIdx >= 0 ? (cols[brandIdx] || '') : '';
+                    const catRaw = catIdx >= 0 ? (cols[catIdx] || '') : '';
+                    const subCatRaw = subCatIdx >= 0 ? (cols[subCatIdx] || '') : '';
+                    const article = artIdx >= 0 ? (cols[artIdx] || '') : '';
+                    const description = descIdx >= 0 ? (cols[descIdx] || '') : '';
+                    const oldPrice = oldPriceIdx >= 0 ? (cols[oldPriceIdx] || '') : '';
+                    const tag = tagIdx >= 0 ? (cols[tagIdx] || '') : '';
+                    const img = imgIdx >= 0 ? (cols[imgIdx] || '') : '';
+                    const catId = catIdIdx >= 0 ? (cols[catIdIdx] || '') : '';
+                    
+                    if (!name || !priceRaw) continue;
+                    const priceNum = parseFloat(priceRaw); if (isNaN(priceNum)) continue;
+                    
+                    let foundBrand = brandRaw ? BRAND_NAMES.find(b => b.toUpperCase() === brandRaw.toUpperCase() || b.toUpperCase().includes(brandRaw.toUpperCase()) || brandRaw.toUpperCase().includes(b.toUpperCase())) : null;
+                    if (!foundBrand) foundBrand = BRAND_NAMES.find(b => name.toUpperCase().includes(b.toUpperCase()) || catRaw.toUpperCase().includes(b.toUpperCase()) || subCatRaw.toUpperCase().includes(b.toUpperCase()));
+                    if (!foundBrand) { skipped++; continue; }
+                    
+                    if (!brandCatalog[foundBrand]) { brandCatalog[foundBrand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }; }
+                    
+                    const catResult = findOrCreateCategory(foundBrand, catRaw, subCatRaw);
+                    const displayCategory = catResult.parentName ? catResult.parentName + ' → ' + catResult.name : catResult.name;
+                    
+                    const product = { id: 'imp_' + Date.now() + '_' + i, article: article || catId || ('ART-' + Date.now().toString(36).slice(-4)), name, brand: foundBrand, price: priceNum.toFixed(2) + ' BYN', oldPrice: oldPrice || null, category: displayCategory, categoryId: catResult.id, tag: tag || null, img: img || 'https://i.ibb.co/p7YgvT8/images.jpg', description };
+                    
+                    if (!brandCatalog[foundBrand].products.find(p => p.name === name && p.brand === foundBrand)) {
+                        brandCatalog[foundBrand].products.push(product);
+                        count++;
+                    }
+                }
+                
+                saveData(); renderAll();
+                showToast(`✅ Импортировано ${count} товаров` + (skipped > 0 ? ` (пропущено ${skipped})` : ''));
+                document.getElementById('mainFileInput').value = '';
+            };
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) reader.readAsArrayBuffer(file); else reader.readAsText(file, 'UTF-8');
+        }
+        
+        function mergeFiles(action) {
+            const files = document.getElementById('multiFileInput').files;
+            if (!files.length) return showToast('❌ Выберите файлы!');
+            let allProducts = []; let total = 0, done = 0;
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let text = '';
+                    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) { try { const wb = XLSX.read(e.target.result, { type: 'array' }); text = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]], { FS: '\t' }); } catch(err) {} }
+                    else { text = e.target.result.replace(/^\uFEFF/, ''); }
+                    const { lines, delimiter } = parseFileToLines(text);
+                    if (lines.length < 2) { done++; return; }
+                    const headers = lines[0].split(delimiter).map(h => h.trim());
+                    const brandIdx = findColumnIndex(headers, 'Бренд', 'бренд');
+                    const catIdx = findColumnIndex(headers, 'Категория', 'категория');
+                    const subCatIdx = findColumnIndex(headers, 'Подкатегория', 'подкатегория');
+                    const nameIdx = findColumnIndex(headers, 'Название', 'название', 'Наименование', 'Номенклатура');
+                    const priceIdx = findColumnIndex(headers, 'Цена', 'цена', 'Розничная');
+                    const oldPriceIdx = findColumnIndex(headers, 'Старая цена', 'старая цена');
+                    const artIdx = findColumnIndex(headers, 'Артикул', 'артикул');
+                    const descIdx = findColumnIndex(headers, 'Описание', 'описание');
+                    const tagIdx = findColumnIndex(headers, 'Тег', 'тег');
+                    const imgIdx = findColumnIndex(headers, 'Фото', 'фото');
+                    const catIdIdx = findColumnIndex(headers, 'ID КАТ', 'id кат');
+                    
+                    if (nameIdx === -1 || priceIdx === -1) { done++; return; }
+                    for (let i = 1; i < lines.length; i++) {
+                        const cols = lines[i].split(delimiter).map(v => v.trim());
+                        const name = cols[nameIdx] || '';
+                        const priceRaw = (cols[priceIdx] || '').replace(',', '.');
+                        if (!name || !priceRaw) continue;
+                        const priceNum = parseFloat(priceRaw); if (isNaN(priceNum)) continue;
+                        const brandRaw = brandIdx >= 0 ? (cols[brandIdx] || '') : '';
+                        const catRaw = catIdx >= 0 ? (cols[catIdx] || '') : '';
+                        const subCatRaw = subCatIdx >= 0 ? (cols[subCatIdx] || '') : '';
+                        
+                        let foundBrand = brandRaw ? BRAND_NAMES.find(b => b.toUpperCase() === brandRaw.toUpperCase() || b.toUpperCase().includes(brandRaw.toUpperCase())) : null;
+                        if (!foundBrand) foundBrand = BRAND_NAMES.find(b => name.toUpperCase().includes(b.toUpperCase()) || catRaw.toUpperCase().includes(b.toUpperCase()) || subCatRaw.toUpperCase().includes(b.toUpperCase()));
+                        if (!foundBrand) continue;
+                        
+                        if (!brandCatalog[foundBrand]) { brandCatalog[foundBrand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }; }
+                        
+                        const catResult = findOrCreateCategory(foundBrand, catRaw, subCatRaw);
+                        const displayCategory = catResult.parentName ? catResult.parentName + ' → ' + catResult.name : catResult.name;
+                        
+                        allProducts.push({ brand: foundBrand, categoryId: catResult.id, article: (artIdx>=0?cols[artIdx]:'') || (catIdIdx>=0?cols[catIdIdx]:'') || '', name, category: displayCategory, price: priceNum.toFixed(2) + ' BYN', oldPrice: oldPriceIdx>=0?(cols[oldPriceIdx]||''):'', tag: tagIdx>=0?(cols[tagIdx]||''):'', img: imgIdx>=0?(cols[imgIdx]||''):'https://i.ibb.co/p7YgvT8/images.jpg', description: descIdx>=0?(cols[descIdx]||''):'' });
+                        total++;
+                    }
+                    done++;
+                    if (done === files.length) {
+                        if (action === 'add') {
+                            allProducts.forEach(p => {
+                                if (!brandCatalog[p.brand]) brandCatalog[p.brand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] };
+                                if (!brandCatalog[p.brand].products.find(ep => ep.name === p.name && ep.brand === p.brand)) brandCatalog[p.brand].products.push({ ...p, id: 'merge_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) });
+                            });
+                            saveData(); renderAll(); showToast(`✅ Добавлено ${total} товаров`);
+                        } else if (action === 'csv') {
+                            let csv = 'Бренд;ID КАТ;Артикул;Название;Категория;Подкатегория;Цена;Старая цена;Тег;Фото;Описание\n';
+                            allProducts.forEach(p => { const parentCat = p.categoryId ? getParentCategoryName(p.brand, p.categoryId) : ''; const subCat = parentCat ? p.category.split(' → ').pop() : ''; const mainCat = parentCat || (p.category.includes(' → ') ? p.category.split(' → ')[0] : p.category); csv += [p.brand, p.categoryId, p.article, p.name, mainCat, subCat, p.price, p.oldPrice, p.tag, p.img, p.description].join(';') + '\n'; });
+                            downloadFile(csv, 'merged_products.csv'); showToast(`✅ CSV скачан`);
+                        } else if (action === 'excel') {
+                            const data = allProducts.map(p => { const parentCat = p.categoryId ? getParentCategoryName(p.brand, p.categoryId) : ''; const subCat = parentCat ? p.category.split(' → ').pop() : ''; const mainCat = parentCat || (p.category.includes(' → ') ? p.category.split(' → ')[0] : p.category); return { 'Бренд': p.brand, 'ID КАТ': p.categoryId, 'Артикул': p.article, 'Название': p.name, 'Категория': mainCat, 'Подкатегория': subCat, 'Цена': p.price, 'Старая цена': p.oldPrice, 'Тег': p.tag, 'Фото': p.img, 'Описание': p.description }; });
+                            const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
+                            XLSX.utils.book_append_sheet(wb, ws, 'Товары'); XLSX.writeFile(wb, 'merged_products.xlsx');
+                            showToast(`✅ Excel скачан`);
+                        }
+                        document.getElementById('multiFileInput').value = '';
+                    }
+                };
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) reader.readAsArrayBuffer(file); else reader.readAsText(file, 'UTF-8');
+            });
+        }
+        
+        async function autoImportCSV() { try { const resp = await fetch('./data/files_list.txt'); if (!resp.ok) return showToast('files_list.txt не найден!'); const files = (await resp.text()).split('\n').map(f => f.trim()).filter(f => f.endsWith('.csv')); let total = 0; for (const f of files) { try { const r = await fetch('./data/' + f); if (!r.ok) continue; const text = await r.text(); const { lines, delimiter } = parseFileToLines(text); const headers = lines[0].split(delimiter).map(h => h.trim()); const nameIdx = findColumnIndex(headers, 'Название', 'Наименование'); const priceIdx = findColumnIndex(headers, 'Цена', 'Розничная'); const brandIdx = findColumnIndex(headers, 'Бренд'); if (nameIdx === -1 || priceIdx === -1) continue; for (let i = 1; i < lines.length; i++) { const cols = lines[i].split(delimiter).map(v => v.trim()); const name = cols[nameIdx]||'', priceRaw = (cols[priceIdx]||'').replace(',','.'); if (!name||!priceRaw) continue; const pn = parseFloat(priceRaw); if (isNaN(pn)) continue; let fb = brandIdx>=0 ? BRAND_NAMES.find(b=>b.toUpperCase()===cols[brandIdx].toUpperCase()) : null; if (!fb) fb = BRAND_NAMES.find(b=>name.toUpperCase().includes(b.toUpperCase())); if (!fb) continue; if (!brandCatalog[fb]) brandCatalog[fb]={categories:[{id:'all',label:'Все товары'},{id:'new',label:'Новинки'}],products:[]}; const p={id:'csv_'+Date.now()+'_'+i,name,article:'',brand:fb,price:pn.toFixed(2)+' BYN',oldPrice:null,category:'Все товары',categoryId:'',tag:null,img:'https://i.ibb.co/p7YgvT8/images.jpg',description:''}; if(!brandCatalog[fb].products.find(e=>e.name===p.name)){brandCatalog[fb].products.push(p);total++;} } } catch(e) {} } saveData(); renderAll(); showToast(`Загружено ${total} товаров!`); } catch(e) { showToast('Ошибка!'); } }
+        
+        function showToast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2000); }
+        
+        loadData(); renderAll();
+    </script>
+</body>
+</html>
