@@ -221,26 +221,33 @@ async function submitCheckout() {
 
     saveOrderToHistory(name, phone, items, total, orderNumber);
     saveOrderToPanel(name, phone, inst, items, total, orderNumber);
-// Отправка заказа на сервер
-fetch('https://vitbeauty-server.onrender.com/order', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        id: Date.now().toString(),
-        number: orderNumber,
-        name: name,
-        phone: phone,
-        inst: inst || 'НЕТ',
-        items: items,
-        total: total,
-        date: new Date().toLocaleString('ru-RU'),
-        status: 'new',
-        starred: false,
-        employee: null
-    })
-}).catch(function(e) {
-    console.log('Ошибка отправки на сервер:', e);
-});
+
+    // ✅ Отправка заказа на сервер Render
+    try {
+        const response = await fetch('https://vitbeauty-server.onrender.com/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: Date.now().toString(),
+                number: orderNumber,
+                name: name,
+                phone: phone,
+                inst: inst || 'НЕТ',
+                items: items,
+                total: total,
+                date: new Date().toLocaleString('ru-RU'),
+                status: 'new',
+                starred: false,
+                employee: null
+            })
+        });
+        const result = await response.json();
+        console.log('✅ Заказ отправлен на сервер:', result);
+    } catch(e) {
+        console.log('❌ Ошибка отправки на сервер:', e);
+    }
+
+    // Отправка в Telegram
     let message = '🛍️ <b>НОВЫЙ ЗАКАЗ #' + orderNumber + '</b>\n\n';
     message += '👤 <b>Клиент:</b> ' + name + '\n';
     message += '📞 <b>Телефон:</b> ' + phone + '\n';
@@ -429,7 +436,7 @@ function openCatalog(brandName) {
     // Кнопка "Все товары" с подкатегориями
     const allSubs = categories.filter(function(c) { return c.parent === 'all'; });
     html += '<div class="category-group">';
-    html += '<button class="category-btn category-parent-btn ' + (currentCategory === 'all' ? 'active' : '') + '" data-category="all" data-has-children="' + (allSubs.length > 0) + '"><span>Все товары</span>' + (allSubs.length > 0 ? '<span class="arrow">▶</span>' : '') + '</button>';
+    html += '<button class="category-btn category-parent-btn ' + (currentCategory === 'all' ? 'active' : '') + '" data-category="all" data-has-children="' + (allSubs.length > 0) + '"><span>📦 Все товары</span>' + (allSubs.length > 0 ? '<span class="arrow">▶</span>' : '') + '</button>';
     if (allSubs.length > 0) {
         html += '<div class="subcategory-container" data-parent="all">';
         allSubs.forEach(function(sub) {
@@ -442,7 +449,7 @@ function openCatalog(brandName) {
     // Кнопка "Новинки" с подкатегориями
     const newSubs = categories.filter(function(c) { return c.parent === 'new'; });
     html += '<div class="category-group">';
-    html += '<button class="category-btn category-parent-btn ' + (currentCategory === 'new' ? 'active' : '') + '" data-category="new" data-has-children="' + (newSubs.length > 0) + '"><span>Новинки</span>' + (newSubs.length > 0 ? '<span class="arrow">▶</span>' : '') + '</button>';
+    html += '<button class="category-btn category-parent-btn ' + (currentCategory === 'new' ? 'active' : '') + '" data-category="new" data-has-children="' + (newSubs.length > 0) + '"><span>✨ Новинки</span>' + (newSubs.length > 0 ? '<span class="arrow">▶</span>' : '') + '</button>';
     if (newSubs.length > 0) {
         html += '<div class="subcategory-container" data-parent="new">';
         newSubs.forEach(function(sub) {
@@ -501,7 +508,6 @@ function openCatalog(brandName) {
 
     const grid = document.getElementById('catalogItemsGrid');
 
-    // Клик по родительской категории (аккордеон)
     document.querySelectorAll('.category-parent-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -531,7 +537,6 @@ function openCatalog(brandName) {
         });
     });
 
-    // Клик по подкатегории
     document.querySelectorAll('.subcategory-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -557,7 +562,6 @@ function closeCatalog() {
     currentCategory = 'all';
 }
 
-// КЛИК ПО БРЕНДАМ
 document.querySelectorAll('.brand-card-link').forEach(function(card) {
     card.addEventListener('click', function(e) {
         e.preventDefault();
@@ -570,7 +574,6 @@ document.querySelectorAll('.brand-card-link').forEach(function(card) {
     });
 });
 
-// ЗАКРЫТИЕ КАТАЛОГА ПО КЛИКУ ВНЕ
 document.addEventListener('click', function(e) {
     const modal = document.getElementById('productModal');
     if (modal && modal.classList.contains('active')) return;
@@ -744,7 +747,6 @@ function showSearchResults(results, query) {
     document.getElementById('searchResultsContainer').style.display = 'block';
 }
 
-// Выпадающий поиск
 const searchInput = document.getElementById('searchInputNav');
 const searchDropdown = document.getElementById('searchDropdown');
 
