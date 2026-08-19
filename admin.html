@@ -160,6 +160,7 @@
         const STORAGE_KEY = 'vitbeauty_products';
         const CATEGORIES_KEY = 'vitbeauty_categories_v2';
         const ORDERS_KEY = 'vitbeauty_orders_history';
+        const ORDERS_SERVER_KEY = 'vitbeauty_orders_v2';
         const BRAND_NAMES = ['HAIR SEKTA', 'IMPRESSION PROFESSIONAL', 'MALECULA', 'ЧИСТОВЬЕ'];
         
         const brandCatalog = { 'HAIR SEKTA': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'IMPRESSION PROFESSIONAL': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'MALECULA': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] }, 'ЧИСТОВЬЕ': { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] } };
@@ -217,18 +218,21 @@
             const p = localStorage.getItem(STORAGE_KEY), c = localStorage.getItem(CATEGORIES_KEY);
             if (p) try { JSON.parse(p).forEach(x => { if (x.brand && brandCatalog[x.brand] && !brandCatalog[x.brand].products.find(e => e.id === x.id)) brandCatalog[x.brand].products.push(x); }); } catch(e) {}
             if (c) try { Object.entries(JSON.parse(c)).forEach(([b, cats]) => { if (brandCatalog[b]) { cats.forEach(cat => { if (!brandCatalog[b].categories.find(x => x.id === cat.id)) brandCatalog[b].categories.push({ id: cat.id, label: cat.name, parent: null }); if (cat.children) cat.children.forEach(sub => { const sid = cat.id + '_sub_' + sub.replace(/\s/g, '_'); if (!brandCatalog[b].categories.find(x => x.id === sid)) brandCatalog[b].categories.push({ id: sid, label: sub, parent: cat.id }); }); }); } }); } catch(e) {}
-       // Загрузка заказов с сервера
-fetch('https://vitbeauty-server.onrender.com/orders')
-    .then(function(r) { return r.json(); })
-    .then(function(orders) {
-        if (orders && orders.length) {
-            localStorage.setItem('vitbeauty_orders_v2', JSON.stringify(orders));
-            renderOrdersAdmin();
+            
+            // Загрузка заказов с сервера
+            fetch('https://vitbeauty-server.onrender.com/orders')
+                .then(function(r) { return r.json(); })
+                .then(function(orders) {
+                    if (orders && orders.length) {
+                        localStorage.setItem(ORDERS_SERVER_KEY, JSON.stringify(orders));
+                        renderOrdersAdmin();
+                        console.log('✅ Заказы загружены с сервера:', orders.length);
+                    }
+                })
+                .catch(function(e) {
+                    console.log('Ошибка загрузки с сервера:', e);
+                });
         }
-    })
-    .catch(function(e) {
-        console.log('Ошибка загрузки с сервера:', e);
-    }); }
         
         function saveData() {
             const all = [];
@@ -441,11 +445,7 @@ fetch('https://vitbeauty-server.onrender.com/orders')
                 const parts = cs.value.split('|');
                 ci = parts[0];
                 const catObj = brandCatalog[brand].categories.find(c => c.id === ci);
-                if (catObj) {
-                    cn = catObj.label;
-                } else {
-                    cn = cs.selectedOptions[0].text.split(' (')[0];
-                }
+                if (catObj) { cn = catObj.label; } else { cn = cs.selectedOptions[0].text.split(' (')[0]; }
             }
             const p = { id: 'prod_' + Date.now(), name, article: document.getElementById('productArticle').value.trim() || '', brand, price: price.includes('BYN') ? price : price + ' BYN', oldPrice: document.getElementById('productOldPrice').value.trim() || null, category: cn, categoryId: ci, tag: null, img: document.getElementById('productImg').value.trim() || 'https://i.ibb.co/p7YgvT8/images.jpg', description: document.getElementById('productDesc').value.trim() || '' };
             brandCatalog[brand].products.push(p);
@@ -477,7 +477,14 @@ fetch('https://vitbeauty-server.onrender.com/orders')
         function clearAll() { if (confirm('Удалить ВСЕ товары?')) { Object.values(brandCatalog).forEach(d => d.products = []); selectedProducts.clear(); saveData(); renderAll(); } }
         function copyToClipboard(t) { navigator.clipboard?.writeText(t).then(() => showToast('📋 ' + t)).catch(() => { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }); }
         
-        function getAllOrders() { return JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]'); }
+        // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ
+        function getAllOrders() { 
+            const serverOrders = JSON.parse(localStorage.getItem(ORDERS_SERVER_KEY) || '[]');
+            const oldOrders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
+            if (serverOrders.length > 0) return serverOrders;
+            return oldOrders;
+        }
+        
         function searchOrders() { renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); }
         function resetOrderSearch() { document.getElementById('orderSearchInput').value = ''; renderOrdersAdmin(); }
         function renderOrdersAdmin(q) {
@@ -488,7 +495,7 @@ fetch('https://vitbeauty-server.onrender.com/orders')
             c.innerHTML = orders.reverse().map(o => `<div class="order-list-item" onclick="toggleOrderDetail('${o.number}')"><div class="order-list-left"><div class="order-list-number">#${o.number}</div><div class="order-list-total">${o.total} BYN</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="order-list-date">${o.date}</div><span class="order-list-status status-${o.status}">${{processing:'⏳ В обработке',calling:'📞 Звонок',delivery:'🚚 Доставка',done:'✅ Завершён'}[o.status]||'В обработке'}</span></div></div><div class="order-detail" id="detail-${o.number}"><div class="order-detail-row"><span>Клиент:</span><span>${o.name}</span></div><div class="order-detail-row"><span>Телефон:</span><span>${o.phone}</span></div><div class="order-detail-row"><span>Товары:</span><span>${o.items}</span></div><div class="order-detail-row"><span>Сумма:</span><span>${o.total} BYN</span></div><div class="order-detail-actions"><span style="font-size:12px;color:#888;">Статус:</span><select onchange="changeOrderStatus('${o.number}',this.value)" onclick="event.stopPropagation();"><option value="processing" ${o.status==='processing'?'selected':''}>⏳ В обработке</option><option value="calling" ${o.status==='calling'?'selected':''}>📞 Звонок</option><option value="delivery" ${o.status==='delivery'?'selected':''}>🚚 Доставка</option><option value="done" ${o.status==='done'?'selected':''}>✅ Завершён</option></select></div></div>`).join('');
         }
         function toggleOrderDetail(n) { const d = document.getElementById('detail-' + n), i = d.previousElementSibling; if (d.classList.contains('open')) { d.classList.remove('open'); i.style.borderRadius = '12px'; } else { document.querySelectorAll('.order-detail.open').forEach(x => { x.classList.remove('open'); x.previousElementSibling.style.borderRadius = '12px'; }); d.classList.add('open'); i.style.borderRadius = '12px 12px 0 0'; } }
-        function changeOrderStatus(n, s) { const orders = getAllOrders(); const o = orders.find(x => x.number === n); if (o) { o.status = s; localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); } }
+        function changeOrderStatus(n, s) { const orders = getAllOrders(); const o = orders.find(x => x.number === n); if (o) { o.status = s; localStorage.setItem(ORDERS_SERVER_KEY, JSON.stringify(orders)); renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); } }
         
         function downloadFile(content, filename, type = 'text/csv;charset=utf-8;') { const blob = new Blob(['\uFEFF' + content], { type }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
         function getAllProductsArray() { const all = []; Object.entries(brandCatalog).forEach(([brand, data]) => { data.products.forEach(p => all.push({ ...p, brand })); }); return all; }
