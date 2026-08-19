@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ВитБьюти — Управление заказами</title>
+    <style>
+        :root {
+            --gold: #c8a87a;
+            --gold-light: #dbb98c;
+            --dark: #0f0b08;
+            --darker: #0a0705;
+            --card: rgba(20, 15, 12, 0.95);
+            --border: rgba(200, 168, 122, 0.2);
+            --text: #f5f0eb;
+            --text-dim: #888;
+            --star: #ffc107;
+            --blue: #42A5F5;
+            --red: #ff5252;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        
+        .auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .auth-card { background: var(--card); border-radius: 20px; padding: 35px 25px; max-width: 350px; width: 100%; text-align: center; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .auth-card .logo { font-size: 42px; margin-bottom: 10px; }
+        .auth-card h2 { color: var(--gold); font-size: 20px; font-weight: 600; margin-bottom: 5px; }
+        .auth-card p { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+        .auth-card input { width: 100%; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: #fff; font-size: 18px; margin-bottom: 12px; text-align: center; letter-spacing: 6px; }
+        .auth-card input:focus { outline: none; border-color: var(--gold); }
+        .login-btn { width: 100%; padding: 14px; background: var(--gold); color: #0b0b0b; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; }
+        .login-error { color: var(--red); font-size: 12px; margin-top: 10px; display: none; }
+        
+        .app-header { background: var(--darker); padding: 15px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .app-header .title { font-size: 18px; font-weight: 600; color: var(--gold); }
+        .user-badge { background: rgba(200,168,122,0.1); padding: 6px 14px; border-radius: 20px; font-size: 12px; color: var(--gold-light); cursor: pointer; border: 1px solid var(--border); }
+        .sync-btn { background: var(--gold); color: #0b0b0b; border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 11px; margin-right: 8px; }
+        
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 15px 20px; }
+        .stat-badge { text-align: center; padding: 12px 8px; background: var(--card); border-radius: 14px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
+        .stat-badge:hover { border-color: var(--gold); }
+        .stat-badge.active { border-color: var(--gold); background: rgba(200,168,122,0.1); }
+        .stat-badge .num { font-size: 22px; font-weight: 700; color: var(--gold); }
+        .stat-badge .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+        
+        .tabs-bar { display: flex; gap: 5px; padding: 0 20px 10px; overflow-x: auto; }
+        .tab { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 12px; white-space: nowrap; font-weight: 500; transition: 0.3s; }
+        .tab:hover { border-color: var(--gold); color: var(--gold-light); }
+        .tab.active { background: rgba(200,168,122,0.15); border-color: var(--gold); color: var(--gold-light); font-weight: 600; }
+        
+        .orders-list { padding: 0 15px 80px; }
+        .order-card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 10px; border: 1px solid var(--border); transition: 0.3s; cursor: pointer; position: relative; }
+        .order-card:hover { border-color: rgba(200,168,122,0.5); }
+        .order-card.starred { border-left: 3px solid var(--star); }
+        .order-card.cancelled { opacity: 0.6; }
+        .order-top { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+        .order-number { font-weight: 700; color: var(--gold); font-size: 14px; }
+        .order-date { font-size: 10px; color: var(--text-dim); }
+        .order-items { font-size: 12px; color: #aaa; line-height: 1.4; margin-bottom: 6px; max-height: 36px; overflow: hidden; }
+        .order-bottom { display: flex; justify-content: space-between; align-items: center; }
+        .order-total { font-size: 16px; font-weight: 700; color: var(--gold-light); }
+        .order-status { font-size: 10px; padding: 4px 10px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
+        .status-new { background: rgba(66,165,245,0.2); color: #90CAF9; }
+        .status-accepted { background: rgba(255,152,0,0.2); color: #FFB74D; }
+        .status-delivery { background: rgba(156,39,176,0.2); color: #CE93D8; }
+        .status-done { background: rgba(76,175,80,0.2); color: #A5D6A7; }
+        .status-cancel { background: rgba(255,82,82,0.2); color: #EF9A9A; }
+        .star-btn { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-dim); transition: 0.3s; z-index: 2; }
+        .star-btn.active { color: var(--star); }
+        
+        .order-detail-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: flex-end; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .order-detail-content { background: #1a1410; border-radius: 24px 24px 0 0; padding: 25px 20px 35px; width: 100%; max-height: 85vh; overflow-y: auto; border-top: 2px solid var(--gold); }
+        .order-detail-content h3 { color: var(--gold); font-size: 18px; margin-bottom: 15px; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; }
+        .detail-row .dl { color: var(--text-dim); }
+        .detail-row .dr { color: #fff; font-weight: 500; }
+        .detail-items { margin: 12px 0; font-size: 13px; color: #bbb; line-height: 1.6; }
+        .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
+        .detail-actions button { flex: 1; min-width: 100px; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--gold-light); font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.3s; }
+        .detail-actions button:hover { background: rgba(200,168,122,0.1); border-color: var(--gold); }
+        .detail-actions button.primary { background: var(--gold); color: #0b0b0b; border-color: var(--gold); }
+        .detail-actions button.danger { color: var(--red); border-color: rgba(255,82,82,0.3); }
+        .detail-actions button.danger:hover { background: rgba(255,82,82,0.1); }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+        .empty-state .icon { font-size: 50px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- ЭКРАН ВХОДА -->
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-card">
+            <div class="logo">📋</div>
+            <h2>ВитБьюти</h2>
+            <p>Управление заказами</p>
+            <input type="password" id="pinInput" placeholder="🔐 PIN-код" maxlength="4" inputmode="numeric">
+            <button class="login-btn" onclick="checkPin()">Войти</button>
+            <div class="login-error" id="loginError">Неверный PIN</div>
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЙ ЭКРАН -->
+    <div id="mainScreen" style="display:none;">
+        <div class="app-header">
+            <span class="title">📋 Заказы</span>
+            <div>
+                <button class="sync-btn" onclick="loadOrdersFromServer()">🔄</button>
+                <span class="user-badge" onclick="logout()">👤 Менеджер</span>
+            </div>
+        </div>
+        <div class="stats-bar" id="statsBar"></div>
+        <div class="tabs-bar" id="tabsBar"></div>
+        <div class="orders-list" id="ordersList"></div>
+    </div>
+
+    <!-- МОДАЛКА ЗАКАЗА -->
+    <div id="orderDetail" class="order-detail-modal" style="display:none;" onclick="if(event.target===this)closeOrderDetail()">
+        <div class="order-detail-content" id="orderDetailContent"></div>
+    </div>
+
+    <script>
+        const MANAGER_PIN = '6202';
+        const SERVER_URL = 'https://vitbeauty-server.onrender.com';
+        const STORAGE_KEY = 'vitbeauty_orders_v2';
+        
+        const TABS = [
+            { id: 'all', label: '📋 Все', filter: function(o) { return true; } },
+            { id: 'starred', label: '⭐ Избранные', filter: function(o) { return o.starred; } },
+            { id: 'new', label: '🆕 Новые', filter: function(o) { return o.status === 'new'; } },
+            { id: 'accepted', label: '✅ Принятые', filter: function(o) { return o.status === 'accepted'; } },
+            { id: 'delivery', label: '🚚 Доставка', filter: function(o) { return o.status === 'delivery'; } },
+            { id: 'done', label: '✔️ Завершённые', filter: function(o) { return o.status === 'done'; } },
+            { id: 'cancel', label: '❌ Отменённые', filter: function(o) { return o.status === 'cancel'; } }
+        ];
+        
+        let orders = [];
+        let activeTab = 'all';
+        let activeStatFilter = null;
+        
+        // ========== АВТОРИЗАЦИЯ ==========
+        function checkPin() {
+            const pin = document.getElementById('pinInput').value.trim();
+            if (pin === MANAGER_PIN) {
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('mainScreen').style.display = 'block';
+                document.getElementById('pinInput').value = '';
+                loadOrdersFromServer();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+                document.getElementById('pinInput').value = '';
+            }
+        }
+        
+        document.getElementById('pinInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPin();
+        });
+        
+        function logout() {
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('loginError').style.display = 'none';
+        }
+        
+        // ========== ЗАГРУЗКА ЗАКАЗОВ ==========
+        function loadOrdersFromServer() {
+            showToast('🔄 Загрузка...');
+            fetch(SERVER_URL + '/orders')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    orders = data || [];
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+                    renderAll();
+                    showToast('✅ Заказов: ' + orders.length);
+                })
+                .catch(function(e) {
+                    // Если сервер не отвечает — пробуем localStorage
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    orders = saved ? JSON.parse(saved) : [];
+                    renderAll();
+                    showToast('⚠️ Офлайн: ' + orders.length + ' заказов');
+                });
+        }
+        
+        // ========== ОТОБРАЖЕНИЕ ==========
+        function renderAll() { renderStats(); renderTabs(); renderOrders(); }
+        
+        function renderStats() {
+            const stats = [
+                { label: 'Всего', value: orders.length, filter: 'all' },
+                { label: '⭐ Важные', value: orders.filter(function(o) { return o.starred; }).length, filter: 'starred' },
+                { label: '🔄 В работе', value: orders.filter(function(o) { return o.status === 'new' || o.status === 'accepted' || o.status === 'delivery'; }).length, filter: 'active' },
+                { label: '✅ Готово', value: orders.filter(function(o) { return o.status === 'done'; }).length, filter: 'done' }
+            ];
+            document.getElementById('statsBar').innerHTML = stats.map(function(s) {
+                return '<div class="stat-badge ' + (activeStatFilter === s.filter ? 'active' : '') + '" onclick="handleStatClick(\'' + s.filter + '\')"><div class="num">' + s.value + '</div><div class="lbl">' + s.label + '</div></div>';
+            }).join('');
+        }
+        
+        function handleStatClick(f) {
+            if (activeStatFilter === f) {
+                activeStatFilter = null;
+                activeTab = 'all';
+            } else {
+                activeStatFilter = f;
+                if (f === 'starred') activeTab = 'starred';
+                else if (f === 'done') activeTab = 'done';
+                else activeTab = 'all';
+            }
+            renderAll();
+        }
+        
+        function renderTabs() {
+            document.getElementById('tabsBar').innerHTML = TABS.map(function(t) {
+                return '<div class="tab ' + (activeTab === t.id ? 'active' : '') + '" onclick="switchTab(\'' + t.id + '\')">' + t.label + '</div>';
+            }).join('');
+        }
+        
+        function switchTab(id) { activeTab = id; activeStatFilter = null; renderAll(); }
+        
+        function getFilteredOrders() {
+            let f = orders;
+            const tab = TABS.find(function(t) { return t.id === activeTab; });
+            if (tab) f = f.filter(tab.filter);
+            return f.sort(function(a, b) { return b.id.localeCompare(a.id); });
+        }
+        
+        function renderOrders() {
+            const f = getFilteredOrders();
+            const c = document.getElementById('ordersList');
+            if (!f.length) {
+                c.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Заказов нет</p></div>';
+                return;
+            }
+            const sl = { new: 'Новый', accepted: 'Принят', delivery: 'Доставка', done: 'Завершён', cancel: 'Отменён' };
+            c.innerHTML = f.map(function(o) {
+                return '<div class="order-card ' + (o.starred ? 'starred' : '') + ' ' + (o.status === 'cancel' ? 'cancelled' : '') + '" onclick="openOrderDetail(\'' + o.id + '\')">' +
+                    '<button class="star-btn ' + (o.starred ? 'active' : '') + '" onclick="event.stopPropagation();toggleStar(\'' + o.id + '\')">' + (o.starred ? '⭐' : '☆') + '</button>' +
+                    '<div class="order-top"><div><div class="order-number">#' + o.number + '</div><div class="order-date">' + o.date + '</div></div><span class="order-status status-' + o.status + '">' + (sl[o.status] || 'Новый') + '</span></div>' +
+                    '<div class="order-items">' + o.items + '</div>' +
+                    '<div class="order-bottom"><div class="order-total">' + o.total + ' BYN</div><div style="font-size:10px;color:var(--text-dim);">👤 ' + o.name + '</div></div>' +
+                    '</div>';
+            }).join('');
+        }
+        
+        // ========== ДЕЙСТВИЯ ==========
+        function toggleStar(id) {
+            const o = orders.find(function(x) { return x.id === id; });
+            if (o) { o.starred = !o.starred; saveOrders(); renderOrders(); }
+        }
+        
+        function changeStatus(id, s) {
+            const o = orders.find(function(x) { return x.id === id; });
+            if (o) { o.status = s; saveOrders(); renderAll(); }
+        }
+        
+        function saveOrders() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+            // Отправляем на сервер
+            fetch(SERVER_URL + '/update-orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orders)
+            }).catch(function() {});
+        }
+        
+        function openOrderDetail(id) {
+            const o = orders.find(function(x) { return x.id === id; });
+            if (!o) return;
+            const sl = { new: '🆕 Новый', accepted: '✅ Принят', delivery: '🚚 Доставка', done: '✔️ Завершён', cancel: '❌ Отменён' };
+            document.getElementById('orderDetailContent').innerHTML =
+                '<h3>Заказ #' + o.number + '</h3>' +
+                '<div class="detail-row"><span class="dl">Статус</span><span class="dr">' + (sl[o.status] || 'Новый') + '</span></div>' +
+                '<div class="detail-row"><span class="dl">Клиент</span><span class="dr">' + o.name + '</span></div>' +
+                '<div class="detail-row"><span class="dl">Телефон</span><span class="dr" onclick="callPhone(\'' + o.phone + '\')" style="color:var(--blue);cursor:pointer;">📞 ' + o.phone + '</span></div>' +
+                (o.inst && o.inst !== 'НЕТ' ? '<div class="detail-row"><span class="dl">Instagram</span><span class="dr">' + o.inst + '</span></div>' : '') +
+                '<div class="detail-row"><span class="dl">Дата</span><span class="dr">' + o.date + '</span></div>' +
+                '<div class="detail-row"><span class="dl">Сумма</span><span class="dr" style="font-size:18px;color:var(--gold-light);">' + o.total + ' BYN</span></div>' +
+                '<div class="detail-items"><b>Товары:</b><br>' + o.items.replace(/,/g, '<br>') + '</div>' +
+                '<div class="detail-actions">' +
+                (o.status === 'new' ? '<button class="primary" onclick="changeStatus(\'' + o.id + '\',\'accepted\');closeOrderDetail();">✅ Принять</button>' : '') +
+                (o.status === 'accepted' ? '<button class="primary" onclick="changeStatus(\'' + o.id + '\',\'delivery\');closeOrderDetail();">🚚 В доставку</button>' : '') +
+                (o.status === 'delivery' ? '<button class="primary" onclick="changeStatus(\'' + o.id + '\',\'done\');closeOrderDetail();">✔️ Завершить</button>' : '') +
+                (o.status === 'cancel' ? '<button class="primary" onclick="changeStatus(\'' + o.id + '\',\'new\');closeOrderDetail();">🔄 Возобновить</button>' : '') +
+                (o.status !== 'cancel' && o.status !== 'done' ? '<button class="danger" onclick="changeStatus(\'' + o.id + '\',\'cancel\');closeOrderDetail();">❌ Отменить</button>' : '') +
+                '<button onclick="closeOrderDetail()">Закрыть</button>' +
+                '</div>';
+            document.getElementById('orderDetail').style.display = 'flex';
+        }
+        
+        function closeOrderDetail() { document.getElementById('orderDetail').style.display = 'none'; renderAll(); }
+        function callPhone(p) { window.open('tel:' + p.replace(/[^0-9+]/g, '')); }
+        
+        function showToast(msg) {
+            const old = document.querySelector('.toast-msg');
+            if (old) old.remove();
+            const t = document.createElement('div');
+            t.className = 'toast-msg';
+            t.textContent = msg;
+            t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--gold);color:#0b0b0b;padding:12px 24px;border-radius:25px;z-index:9999;font-weight:600;font-size:14px;';
+            document.body.appendChild(t);
+            setTimeout(function() { t.remove(); }, 2000);
+        }
+    </script>
+</body>
+</html>
