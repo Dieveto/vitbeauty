@@ -11,7 +11,7 @@ const CATEGORIES_KEY = 'vitbeauty_categories_v2';
 const CART_KEY = 'vitbeauty_cart';
 const ORDERS_KEY = 'vitbeauty_orders_history';
 const ORDERS_PANEL_KEY = 'vitbeauty_orders_v2';
-const DATA_VERSION = '2.0';
+const DATA_VERSION = '2.1';
 
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 let activeBrand = null;
@@ -120,6 +120,7 @@ function renderOrders() {
     const container = document.getElementById('ordersList');
     const orders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
     const statusNames = {
+        new: '🆕 Новый',
         processing: '⏳ В обработке',
         calling: '📞 Звонок',
         delivery: '🚚 Доставка',
@@ -152,7 +153,7 @@ function saveOrderToHistory(name, phone, items, total, orderNumber) {
         phone: phone,
         items: items,
         total: total,
-        status: 'processing'
+        status: 'new'
     });
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
 }
@@ -174,10 +175,6 @@ function saveOrderToPanel(name, phone, inst, items, total, orderNumber) {
     };
     panelOrders.unshift(newOrder);
     localStorage.setItem(ORDERS_PANEL_KEY, JSON.stringify(panelOrders));
-
-    if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.CloudStorage.setItem('vitbeauty_orders', JSON.stringify(panelOrders));
-    }
 }
 
 function openCheckoutForm() {
@@ -222,9 +219,9 @@ async function submitCheckout() {
     saveOrderToHistory(name, phone, items, total, orderNumber);
     saveOrderToPanel(name, phone, inst, items, total, orderNumber);
 
-    // ✅ Отправка заказа на сервер Render
+    // Отправка заказа на сервер Render
     try {
-        const response = await fetch('https://vitbeauty-server.onrender.com/order', {
+        await fetch('https://vitbeauty-server.onrender.com/order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -241,8 +238,7 @@ async function submitCheckout() {
                 employee: null
             })
         });
-        const result = await response.json();
-        console.log('✅ Заказ отправлен на сервер:', result);
+        console.log('✅ Заказ отправлен на сервер');
     } catch(e) {
         console.log('❌ Ошибка отправки на сервер:', e);
     }
@@ -255,6 +251,8 @@ async function submitCheckout() {
     message += '\n📦 <b>Товары:</b>\n' + itemsTelegram + '\n\n';
     message += '💰 <b>Итого:</b> ' + total + ' BYN\n';
     message += '🕐 <b>Время:</b> ' + new Date().toLocaleString('ru-RU');
+    message += '\n\n🔗 <b>Управление заказом:</b>\nhttps://dieveto.github.io/vitbeauty/admin.html\n';
+    message += '🔑 <b>PIN:</b> 6202';
 
     const BOT_TOKEN = '8087505808:AAHo4lLMNffdqNIHzpRcpt7OojwpGpXAMrI';
     const CHAT_ID = '7365893074';
@@ -433,7 +431,6 @@ function openCatalog(brandName) {
     html += '<p class="catalog-brand-sub">Весь ассортимент на <a href="' + getBrandSite(brandName) + '" target="_blank" class="catalog-brand-link">сайте поставщика</a></p></div>';
     html += '<div class="catalog-layout"><div class="catalog-sidebar"><h3>Категории</h3>';
 
-    // Кнопка "Все товары" с подкатегориями
     const allSubs = categories.filter(function(c) { return c.parent === 'all'; });
     html += '<div class="category-group">';
     html += '<button class="category-btn category-parent-btn ' + (currentCategory === 'all' ? 'active' : '') + '" data-category="all" data-has-children="' + (allSubs.length > 0) + '"><span>📦 Все товары</span>' + (allSubs.length > 0 ? '<span class="arrow">▶</span>' : '') + '</button>';
@@ -446,7 +443,6 @@ function openCatalog(brandName) {
     }
     html += '</div>';
 
-    // Кнопка "Новинки" с подкатегориями
     const newSubs = categories.filter(function(c) { return c.parent === 'new'; });
     html += '<div class="category-group">';
     html += '<button class="category-btn category-parent-btn ' + (currentCategory === 'new' ? 'active' : '') + '" data-category="new" data-has-children="' + (newSubs.length > 0) + '"><span>✨ Новинки</span>' + (newSubs.length > 0 ? '<span class="arrow">▶</span>' : '') + '</button>';
@@ -459,7 +455,6 @@ function openCatalog(brandName) {
     }
     html += '</div>';
 
-    // Обычные категории с подкатегориями
     mainCats.forEach(function(cat) {
         const children = subCats.filter(function(s) { return s.parent === cat.id; });
         html += '<div class="category-group">';
@@ -476,7 +471,6 @@ function openCatalog(brandName) {
 
     html += '</div><div class="catalog-main"><div class="catalog-items-grid" id="catalogItemsGrid">';
 
-    // Товары
     products.forEach(function(p) {
         let th = '';
         if (p.tag === 'hit') th = '<span class="product-tag hit">ХИТ</span>';
