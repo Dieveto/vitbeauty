@@ -88,7 +88,6 @@
 </head>
 <body>
 
-    <!-- ЭКРАН ВХОДА -->
     <div id="authScreen" class="auth-screen">
         <div class="auth-card">
             <div class="logo">📋</div>
@@ -100,7 +99,6 @@
         </div>
     </div>
 
-    <!-- ОСНОВНОЙ ЭКРАН -->
     <div id="mainScreen" style="display:none;">
         <div class="app-header">
             <span class="title">📋 Заказы</span>
@@ -114,7 +112,6 @@
         <div class="orders-list" id="ordersList"></div>
     </div>
 
-    <!-- МОДАЛКА ЗАКАЗА -->
     <div id="orderDetail" class="order-detail-modal" style="display:none;" onclick="if(event.target===this)closeOrderDetail()">
         <div class="order-detail-content" id="orderDetailContent"></div>
     </div>
@@ -138,7 +135,6 @@
         let activeTab = 'all';
         let activeStatFilter = null;
         
-        // ========== АВТОРИЗАЦИЯ ==========
         function checkPin() {
             const pin = document.getElementById('pinInput').value.trim();
             if (pin === MANAGER_PIN) {
@@ -162,7 +158,6 @@
             document.getElementById('loginError').style.display = 'none';
         }
         
-        // ========== ЗАГРУЗКА ЗАКАЗОВ ==========
         function loadOrdersFromServer() {
             showToast('🔄 Загрузка...');
             fetch(SERVER_URL + '/orders')
@@ -173,8 +168,7 @@
                     renderAll();
                     showToast('✅ Заказов: ' + orders.length);
                 })
-                .catch(function(e) {
-                    // Если сервер не отвечает — пробуем localStorage
+                .catch(function() {
                     const saved = localStorage.getItem(STORAGE_KEY);
                     orders = saved ? JSON.parse(saved) : [];
                     renderAll();
@@ -182,7 +176,6 @@
                 });
         }
         
-        // ========== ОТОБРАЖЕНИЕ ==========
         function renderAll() { renderStats(); renderTabs(); renderOrders(); }
         
         function renderStats() {
@@ -198,15 +191,8 @@
         }
         
         function handleStatClick(f) {
-            if (activeStatFilter === f) {
-                activeStatFilter = null;
-                activeTab = 'all';
-            } else {
-                activeStatFilter = f;
-                if (f === 'starred') activeTab = 'starred';
-                else if (f === 'done') activeTab = 'done';
-                else activeTab = 'all';
-            }
+            if (activeStatFilter === f) { activeStatFilter = null; activeTab = 'all'; }
+            else { activeStatFilter = f; if (f === 'starred') activeTab = 'starred'; else if (f === 'done') activeTab = 'done'; else activeTab = 'all'; }
             renderAll();
         }
         
@@ -228,10 +214,7 @@
         function renderOrders() {
             const f = getFilteredOrders();
             const c = document.getElementById('ordersList');
-            if (!f.length) {
-                c.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Заказов нет</p></div>';
-                return;
-            }
+            if (!f.length) { c.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Заказов нет</p></div>'; return; }
             const sl = { new: 'Новый', accepted: 'Принят', delivery: 'Доставка', done: 'Завершён', cancel: 'Отменён' };
             c.innerHTML = f.map(function(o) {
                 return '<div class="order-card ' + (o.starred ? 'starred' : '') + ' ' + (o.status === 'cancel' ? 'cancelled' : '') + '" onclick="openOrderDetail(\'' + o.id + '\')">' +
@@ -243,7 +226,6 @@
             }).join('');
         }
         
-        // ========== ДЕЙСТВИЯ ==========
         function toggleStar(id) {
             const o = orders.find(function(x) { return x.id === id; });
             if (o) { o.starred = !o.starred; saveOrders(); renderOrders(); }
@@ -256,12 +238,14 @@
         
         function saveOrders() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-            // Отправляем на сервер
             fetch(SERVER_URL + '/update-orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orders)
-            }).catch(function() {});
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() { console.log('✅ Статус сохранён'); })
+            .catch(function(e) { console.log('❌ Ошибка:', e); });
         }
         
         function openOrderDetail(id) {
