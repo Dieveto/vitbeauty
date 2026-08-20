@@ -39,6 +39,10 @@
                         <button id="searchBtnNav">🔍</button>
                         <div id="searchDropdown" class="search-dropdown"></div>
                     </div>
+                    <div class="notif-icon-header" onclick="toggleNotifications()" title="Уведомления">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <span class="notif-count-badge" id="notifCountHeader" style="display:none;">0</span>
+                    </div>
                     <div class="cart-icon" onclick="toggleCart()">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
                         <span class="cart-count" id="cartCount">0</span>
@@ -80,7 +84,7 @@
                     <div class="modal-description"><h4>Описание</h4><p id="modalProductDesc">Описание пока не добавлено</p></div>
                     <div class="modal-buttons">
                         <button class="btn-modal-order" onclick="addToCartFromModal()">🛒 В корзину</button>
-                        <button class="btn-modal-share" onclick="shareProductFromModal()" title="Поделиться">📤 Поделиться</button>
+                        <button class="btn-modal-share" onclick="shareProductFromModal()">Поделиться</button>
                     </div>
                 </div>
             </div>
@@ -119,19 +123,27 @@
             <div class="cart-tabs">
                 <button class="cart-tab active" id="tabCart" onclick="switchCartTab('cart')">Товары</button>
                 <button class="cart-tab" id="tabOrders" onclick="switchCartTab('orders')">📋 Мои заказы</button>
-                <button class="cart-tab" id="tabNotifications" onclick="switchCartTab('notifications')">🔔 <span id="notifCount" class="notif-badge" style="display:none;">0</span></button>
                 <button class="cart-close" onclick="toggleCart()">✕</button>
             </div>
         </div>
         <div class="cart-items" id="cartItems"><p class="cart-empty">Корзина пуста</p></div>
         <div class="cart-items" id="ordersList" style="display:none;"><p class="cart-empty">Заказов пока нет</p></div>
-        <div class="cart-items" id="notificationsList" style="display:none;"><p class="cart-empty">Уведомлений нет</p></div>
         <div class="cart-footer" id="cartFooter" style="display:none;">
             <div class="cart-total">Итого: <span id="cartTotal">0 BYN</span></div>
             <button class="btn-cart-order" onclick="openCheckoutForm()">📝 Оформить заказ</button>
         </div>
     </div>
     <div id="cartOverlay" class="cart-overlay" onclick="toggleCart()"></div>
+
+    <!-- ПАНЕЛЬ УВЕДОМЛЕНИЙ -->
+    <div class="notif-panel" id="notifPanel">
+        <div class="notif-header">
+            <h3>🔔 Уведомления</h3>
+            <button class="notif-close" onclick="toggleNotifications()">✕</button>
+        </div>
+        <div class="notif-items" id="notifItemsList"><p class="cart-empty">Уведомлений нет</p></div>
+    </div>
+    <div id="notifOverlay" class="cart-overlay" onclick="toggleNotifications()"></div>
 
     <footer class="footer"><div class="container"><p>© 2026 <span>ВитБьюти</span> — профессиональная косметика для мастеров.</p></div></footer>
     <a href="#top" class="scroll-top" title="Наверх"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></a>
