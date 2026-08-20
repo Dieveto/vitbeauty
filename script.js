@@ -11,7 +11,7 @@ const CATEGORIES_KEY = 'vitbeauty_categories_v2';
 const CART_KEY = 'vitbeauty_cart';
 const ORDERS_KEY = 'vitbeauty_orders_history';
 const ORDERS_PANEL_KEY = 'vitbeauty_orders_v2';
-const DATA_VERSION = '2.4';
+const DATA_VERSION = '2.5';
 
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 let activeBrand = null;
@@ -115,7 +115,7 @@ function switchCartTab(tabName) {
     if (tabName === 'orders') renderOrders();
 }
 
-// ЗАКАЗЫ (для клиента — с обновлением статусов с сервера)
+// ЗАКАЗЫ (для клиента)
 function renderOrders() {
     const container = document.getElementById('ordersList');
     
@@ -144,7 +144,7 @@ function renderOrders() {
 
 function showClientOrders(container, orders) {
     const statusNames = {
-        new: '✅ Принят',
+        new: '📝 Оформлен',
         accepted: '✅ Принят',
         processing: '⏳ В обработке',
         calling: '📞 Скоро позвоним',
