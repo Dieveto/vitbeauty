@@ -11,7 +11,7 @@ const CATEGORIES_KEY = 'vitbeauty_categories_v2';
 const CART_KEY = 'vitbeauty_cart';
 const ORDERS_KEY = 'vitbeauty_orders_history';
 const ORDERS_PANEL_KEY = 'vitbeauty_orders_v2';
-const DATA_VERSION = '2.3';
+const DATA_VERSION = '2.4';
 
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 let activeBrand = null;
@@ -115,10 +115,34 @@ function switchCartTab(tabName) {
     if (tabName === 'orders') renderOrders();
 }
 
-// ЗАКАЗЫ (для клиента)
+// ЗАКАЗЫ (для клиента — с обновлением статусов с сервера)
 function renderOrders() {
     const container = document.getElementById('ordersList');
-    const orders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
+    
+    fetch('https://vitbeauty-server.onrender.com/orders')
+        .then(function(r) { return r.json(); })
+        .then(function(serverOrders) {
+            const localOrders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
+            
+            if (serverOrders && serverOrders.length) {
+                serverOrders.forEach(function(so) {
+                    const local = localOrders.find(function(lo) { return lo.number === so.number; });
+                    if (local) {
+                        local.status = so.status;
+                    }
+                });
+                localStorage.setItem(ORDERS_KEY, JSON.stringify(localOrders));
+            }
+            
+            showClientOrders(container, localOrders);
+        })
+        .catch(function() {
+            const localOrders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
+            showClientOrders(container, localOrders);
+        });
+}
+
+function showClientOrders(container, orders) {
     const statusNames = {
         new: '✅ Принят',
         accepted: '✅ Принят',
@@ -128,6 +152,7 @@ function renderOrders() {
         done: '✅ Завершён',
         cancel: '❌ Отменён'
     };
+    
     if (orders.length) {
         container.innerHTML = orders.reverse().map(function(o) {
             return '<div class="order-card">' +
@@ -221,7 +246,6 @@ async function submitCheckout() {
     saveOrderToHistory(name, phone, items, total, orderNumber);
     saveOrderToPanel(name, phone, inst, items, total, orderNumber);
 
-    // Отправка заказа на сервер Render
     try {
         await fetch('https://vitbeauty-server.onrender.com/order', {
             method: 'POST',
@@ -245,7 +269,6 @@ async function submitCheckout() {
         console.log('❌ Ошибка отправки на сервер:', e);
     }
 
-    // Отправка в Telegram
     let message = '🛍️ <b>НОВЫЙ ЗАКАЗ #' + orderNumber + '</b>\n\n';
     message += '👤 <b>Клиент:</b> ' + name + '\n';
     message += '📞 <b>Телефон:</b> ' + phone + '\n';
