@@ -12,7 +12,7 @@ const CART_KEY = 'vitbeauty_cart';
 const ORDERS_KEY = 'vitbeauty_orders_history';
 const ORDERS_PANEL_KEY = 'vitbeauty_orders_v2';
 const NOTIFICATIONS_KEY = 'vitbeauty_notifications';
-const DATA_VERSION = '2.8';
+const DATA_VERSION = '2.9';
 
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 let activeBrand = null;
@@ -21,7 +21,8 @@ let currentModalProduct = null;
 
 // ========== УВЕДОМЛЕНИЯ ==========
 function getNotifications() {
-    return JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || '[]');
+    try { return JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || '[]'); }
+    catch(e) { return []; }
 }
 
 function saveNotifications(notifs) {
@@ -44,19 +45,31 @@ function addNotification(text, type) {
 function updateNotifCount() {
     const notifs = getNotifications();
     const unread = notifs.filter(function(n) { return !n.read; }).length;
-    const countEl = document.getElementById('notifCount');
+    const countEl = document.getElementById('notifCountHeader');
     if (countEl) {
         if (unread > 0) {
             countEl.textContent = unread;
-            countEl.style.display = 'inline';
+            countEl.style.display = 'flex';
         } else {
             countEl.style.display = 'none';
         }
     }
 }
 
+function toggleNotifications() {
+    const panel = document.getElementById('notifPanel');
+    const overlay = document.getElementById('notifOverlay');
+    if (!panel || !overlay) return;
+    panel.classList.toggle('open');
+    overlay.classList.toggle('active');
+    if (panel.classList.contains('open')) {
+        renderNotifications();
+    }
+}
+
 function renderNotifications() {
-    const container = document.getElementById('notificationsList');
+    const container = document.getElementById('notifItemsList');
+    if (!container) return;
     const notifs = getNotifications();
     
     if (!notifs.length) {
@@ -64,9 +77,9 @@ function renderNotifications() {
         return;
     }
     
-    container.innerHTML = notifs.map(function(n, index) {
-        const icon = n.type === 'order' ? '📦' : n.type === 'delivery' ? '🚚' : n.type === 'done' ? '✅' : n.type === 'cancel' ? '❌' : '🔔';
-        return '<div class="notification-item ' + (n.read ? 'read' : 'unread') + '">' +
+    container.innerHTML = notifs.map(function(n) {
+        const icon = n.type === 'order' ? '📝' : n.type === 'delivery' ? '🚚' : n.type === 'done' ? '✅' : n.type === 'cancel' ? '❌' : '🔔';
+        return '<div class="notification-item ' + (n.read ? '' : 'unread') + '">' +
             '<div class="notif-icon">' + icon + '</div>' +
             '<div class="notif-content">' +
             '<div class="notif-text">' + n.text + '</div>' +
@@ -93,6 +106,25 @@ function deleteNotif(id) {
     notifs = notifs.filter(function(x) { return x.id !== id; });
     saveNotifications(notifs);
     renderNotifications();
+}
+
+function loadNotificationsFromServer() {
+    fetch('https://vitbeauty-server.onrender.com/notifications')
+        .then(function(r) { return r.json(); })
+        .then(function(serverNotifs) {
+            if (serverNotifs && serverNotifs.length) {
+                const localNotifs = getNotifications();
+                serverNotifs.forEach(function(sn) {
+                    const exists = localNotifs.find(function(ln) { return ln.id === sn.id; });
+                    if (!exists) {
+                        localNotifs.unshift(sn);
+                    }
+                });
+                saveNotifications(localNotifs);
+                updateNotifCount();
+            }
+        })
+        .catch(function() {});
 }
 
 //КОРЗИНА 
@@ -186,13 +218,10 @@ function toggleCart() {
 function switchCartTab(tabName) {
     document.getElementById('tabCart').classList.toggle('active', tabName === 'cart');
     document.getElementById('tabOrders').classList.toggle('active', tabName === 'orders');
-    document.getElementById('tabNotifications').classList.toggle('active', tabName === 'notifications');
     document.getElementById('cartItems').style.display = tabName === 'cart' ? 'block' : 'none';
     document.getElementById('ordersList').style.display = tabName === 'orders' ? 'block' : 'none';
-    document.getElementById('notificationsList').style.display = tabName === 'notifications' ? 'block' : 'none';
     document.getElementById('cartFooter').style.display = tabName === 'cart' && cart.length > 0 ? 'block' : 'none';
     if (tabName === 'orders') renderOrders();
-    if (tabName === 'notifications') renderNotifications();
 }
 
 // ЗАКАЗЫ (для клиента)
@@ -208,7 +237,6 @@ function renderOrders() {
                 serverOrders.forEach(function(so) {
                     const local = localOrders.find(function(lo) { return lo.number === so.number; });
                     if (local && local.status !== so.status) {
-                        // Добавляем уведомление при смене статуса
                         const statusMsgs = {
                             accepted: '📦 Ваш заказ #' + so.number + ' принят!',
                             delivery: '🚚 Ваш заказ #' + so.number + ' передан в доставку!',
@@ -351,7 +379,6 @@ async function submitCheckout() {
     saveOrderToHistory(name, phone, items, total, orderNumber);
     saveOrderToPanel(name, phone, inst, items, total, orderNumber);
     
-    // Уведомление о новом заказе
     addNotification('📝 Ваш заказ #' + orderNumber + ' оформлен!', 'order');
 
     try {
@@ -615,10 +642,10 @@ function openCatalog(brandName) {
         html += '<div><span class="price">' + p.price + '</span>';
         if (p.oldPrice) html += '<span class="old-price">' + p.oldPrice + '</span>';
         html += '</div>' + th;
-        html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;justify-content:center;">';
+        html += '<div style="display:flex;gap:6px;margin-top:6px;">';
         html += '<button class="btn-detail" onclick="openProductDetail(this)">Подробнее</button>';
         html += '<button class="btn-cart-add" onclick="event.stopPropagation();addToCart(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + p.price + '\',\'' + (p.img || 'https://i.ibb.co/p7YgvT8/images.jpg').replace(/'/g, "\\'") + '\',\'' + brandName + '\')">🛒</button>';
-        html += '<button class="btn-share-text" onclick="event.stopPropagation();shareProduct(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + brandName + '\')" title="Поделиться">📤 Поделиться</button>';
+        html += '<button class="btn-share" onclick="event.stopPropagation();shareProduct(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + brandName + '\')" title="Поделиться"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg></button>';
         html += '</div></div>';
     });
 
@@ -1295,4 +1322,5 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', checkScrollArrows);
     updateCartUI();
     updateNotifCount();
+    loadNotificationsFromServer();
 });
