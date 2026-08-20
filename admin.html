@@ -42,8 +42,8 @@
         .stat-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px 10px; text-align: center; border: 1px solid rgba(200,168,122,0.1); }
         .stat-number { font-size: 28px; font-weight: 700; color: #c8a87a; }
         .stat-label { font-size: 11px; color: #888; margin-top: 5px; text-transform: uppercase; }
-        .order-search { display: flex; gap: 10px; margin-bottom: 15px; }
-        .order-search input { flex: 1; margin-bottom: 0; }
+        .order-search { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .order-search input { flex: 1; margin-bottom: 0; min-width: 150px; }
         .order-list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(200,168,122,0.08); cursor: pointer; transition: 0.3s; }
         .order-list-item:hover { background: rgba(200,168,122,0.06); border-color: rgba(200,168,122,0.2); }
         .order-list-left { display: flex; align-items: center; gap: 15px; }
@@ -52,15 +52,15 @@
         .order-list-date { font-size: 11px; color: #888; }
         .order-list-status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; }
         .status-new { background: rgba(66,165,245,0.2); color: #90CAF9; }
-        .status-processing { background: rgba(255,152,0,0.2); color: #FFB74D; }
-        .status-calling { background: rgba(33,150,243,0.2); color: #64B5F6; }
-        .status-delivery { background: rgba(76,175,80,0.2); color: #81C784; }
-        .status-done { background: rgba(200,168,122,0.2); color: #dbb98c; }
+        .status-accepted { background: rgba(255,152,0,0.2); color: #FFB74D; }
+        .status-delivery { background: rgba(156,39,176,0.2); color: #CE93D8; }
+        .status-done { background: rgba(76,175,80,0.2); color: #A5D6A7; }
+        .status-cancel { background: rgba(255,82,82,0.2); color: #EF9A9A; }
         .order-detail { display: none; padding: 16px 20px; margin: -4px 0 8px 0; background: rgba(200,168,122,0.03); border-radius: 0 0 12px 12px; border: 1px solid rgba(200,168,122,0.1); border-top: none; }
         .order-detail.open { display: block; }
         .order-detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #aaa; }
         .order-detail-row span:last-child { color: #f5f0eb; font-weight: 500; }
-        .order-detail-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+        .order-detail-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
         .order-detail-actions select { width: auto; padding: 8px 32px 8px 12px; font-size: 12px; margin-bottom: 0; border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(200,168,122,0.2); }
         .toast { position: fixed; top: 20px; right: 20px; background: #c8a87a; color: #0b0b0b; padding: 15px 25px; border-radius: 10px; z-index: 9999; animation: slideIn 0.3s ease; font-weight: 600; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -85,6 +85,7 @@
                 <button class="small" onclick="searchOrders()">Найти</button>
                 <button class="small" onclick="resetOrderSearch()">Все</button>
                 <button class="small" onclick="loadOrdersFromServer()">🔄</button>
+                <button class="small" onclick="sendNotificationToAll()">📨 Всем</button>
             </div>
             <div id="ordersAdminList"></div>
         </div>
@@ -241,6 +242,18 @@
                     }
                 })
                 .catch(function(e) {});
+        }
+        
+        function sendNotificationToAll() {
+            const msg = prompt('Сообщение для всех клиентов:');
+            if (!msg) return;
+            fetch('https://vitbeauty-server.onrender.com/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: msg, type: 'info' })
+            })
+            .then(function() { showToast('✅ Отправлено всем'); })
+            .catch(function() { showToast('❌ Ошибка'); });
         }
         
         function saveData() {
@@ -500,7 +513,7 @@
             let orders = getAllOrders();
             if (!orders.length) { c.innerHTML = '<p style="color:#666;padding:20px;">Заказов пока нет</p>'; return; }
             if (q) { orders = orders.filter(o => o.number.toLowerCase().includes(q.toLowerCase())); if (!orders.length) { c.innerHTML = '<p style="color:#666;padding:20px;">Не найдены</p>'; return; } }
-            c.innerHTML = orders.map(o => `<div class="order-list-item" onclick="toggleOrderDetail('${o.number}')"><div class="order-list-left"><div class="order-list-number">#${o.number}</div><div class="order-list-total">${o.total} BYN</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="order-list-date">${o.date}</div><span class="order-list-status status-${o.status}">${{new:'🆕 Новый',processing:'⏳ В обработке',calling:'📞 Звонок',delivery:'🚚 Доставка',done:'✅ Завершён'}[o.status]||'В обработке'}</span></div></div><div class="order-detail" id="detail-${o.number}"><div class="order-detail-row"><span>Клиент:</span><span>${o.name}</span></div><div class="order-detail-row"><span>Телефон:</span><span>${o.phone}</span></div><div class="order-detail-row"><span>Товары:</span><span>${o.items}</span></div><div class="order-detail-row"><span>Сумма:</span><span>${o.total} BYN</span></div><div class="order-detail-actions"><span style="font-size:12px;color:#888;">Статус:</span><select onchange="changeOrderStatus('${o.number}',this.value)" onclick="event.stopPropagation();"><option value="new" ${o.status==='new'?'selected':''}>🆕 Новый</option><option value="processing" ${o.status==='processing'?'selected':''}>⏳ В обработке</option><option value="calling" ${o.status==='calling'?'selected':''}>📞 Звонок</option><option value="delivery" ${o.status==='delivery'?'selected':''}>🚚 Доставка</option><option value="done" ${o.status==='done'?'selected':''}>✅ Завершён</option></select></div></div>`).join('');
+            c.innerHTML = orders.map(o => `<div class="order-list-item" onclick="toggleOrderDetail('${o.number}')"><div class="order-list-left"><div class="order-list-number">#${o.number}</div><div class="order-list-total">${o.total} BYN</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="order-list-date">${o.date}</div><span class="order-list-status status-${o.status}">${{new:'🆕 Новый',accepted:'✅ Принят',delivery:'🚚 Доставка',done:'✅ Завершён',cancel:'❌ Отменён'}[o.status]||'В обработке'}</span></div></div><div class="order-detail" id="detail-${o.number}"><div class="order-detail-row"><span>Клиент:</span><span>${o.name}</span></div><div class="order-detail-row"><span>Телефон:</span><span>${o.phone}</span></div><div class="order-detail-row"><span>Товары:</span><span>${o.items}</span></div><div class="order-detail-row"><span>Сумма:</span><span>${o.total} BYN</span></div><div class="order-detail-actions"><span style="font-size:12px;color:#888;">Статус:</span><select onchange="changeOrderStatus('${o.number}',this.value)" onclick="event.stopPropagation();"><option value="new" ${o.status==='new'?'selected':''}>🆕 Новый</option><option value="accepted" ${o.status==='accepted'?'selected':''}>✅ Принят</option><option value="delivery" ${o.status==='delivery'?'selected':''}>🚚 Доставка</option><option value="done" ${o.status==='done'?'selected':''}>✅ Завершён</option><option value="cancel" ${o.status==='cancel'?'selected':''}>❌ Отменён</option></select></div></div>`).join('');
         }
         function toggleOrderDetail(n) { const d = document.getElementById('detail-' + n); if (d) { if (d.classList.contains('open')) d.classList.remove('open'); else d.classList.add('open'); } }
         function changeOrderStatus(n, s) { 
