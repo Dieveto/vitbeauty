@@ -12,7 +12,7 @@ const CART_KEY = 'vitbeauty_cart';
 const ORDERS_KEY = 'vitbeauty_orders_history';
 const ORDERS_PANEL_KEY = 'vitbeauty_orders_v2';
 const NOTIFICATIONS_KEY = 'vitbeauty_notifications';
-const DATA_VERSION = '2.9';
+const DATA_VERSION = '3.0';
 
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 let activeBrand = null;
@@ -574,6 +574,22 @@ function filterProducts(cat, grid, brandName) {
     });
 }
 
+// ПЕРЕХОД К ТОВАРУ (исправлено)
+function goToProduct(brand, productName) {
+    document.getElementById('searchResultsContainer').style.display = 'none';
+    document.getElementById('discount').style.display = '';
+    openCatalog(brand);
+    setTimeout(function() {
+        document.querySelectorAll('.catalog-item').forEach(function(item) {
+            if (item.getAttribute('data-name') === productName) {
+                item.classList.add('highlight');
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(function() { item.classList.remove('highlight'); }, 3000);
+            }
+        });
+    }, 600);
+}
+
 // ОТКРЫТИЕ КАТАЛОГА
 function openCatalog(brandName) {
     document.getElementById('discount').style.display = 'none';
@@ -847,16 +863,7 @@ function handleProductLink() {
     const bn = p.get('brand');
     if (pn && bn) {
         setTimeout(function() {
-            openCatalog(bn);
-            setTimeout(function() {
-                document.querySelectorAll('.catalog-item').forEach(function(item) {
-                    if (item.getAttribute('data-name') === pn) {
-                        item.classList.add('highlight');
-                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        setTimeout(function() { item.classList.remove('highlight'); }, 3000);
-                    }
-                });
-            }, 600);
+            goToProduct(bn, pn);
         }, 300);
     }
 }
@@ -884,7 +891,10 @@ function performSearch() {
 
 function showSearchResults(results, query) {
     document.getElementById('discount').style.display = 'none';
-    if (document.getElementById('catalogContainer').classList.contains('open')) closeCatalog();
+    
+    if (document.getElementById('catalogContainer').classList.contains('open')) {
+        closeCatalog();
+    }
 
     let h = '<div class="search-results-header"><h2 class="search-results-title">Результаты: "' + query + '"</h2><p class="search-results-count">Найдено: ' + results.length + '</p></div>';
     if (!results.length) {
@@ -892,7 +902,13 @@ function showSearchResults(results, query) {
     } else {
         h += '<div class="search-items-grid">';
         results.forEach(function(r) {
-            h += '<div class="search-item"><img src="' + (r.product.img || 'https://i.ibb.co/p7YgvT8/images.jpg') + '"><h4>' + r.product.name + '</h4><div><span class="price">' + r.product.price + '</span></div><button class="search-go-to" onclick="openCatalog(\'' + r.brand + '\')">Перейти</button></div>';
+            const safeName = r.product.name.replace(/'/g, "\\'");
+            h += '<div class="search-item">' +
+                '<img src="' + (r.product.img || 'https://i.ibb.co/p7YgvT8/images.jpg') + '" onclick="goToProduct(\'' + r.brand + '\',\'' + safeName + '\')" style="cursor:pointer;">' +
+                '<h4>' + r.product.name + '</h4>' +
+                '<div><span class="price">' + r.product.price + '</span></div>' +
+                '<button class="search-go-to" onclick="goToProduct(\'' + r.brand + '\',\'' + safeName + '\')">Перейти</button>' +
+                '</div>';
         });
         h += '</div>';
     }
@@ -916,7 +932,8 @@ searchInput.addEventListener('input', function() {
     } else {
         let h = '';
         results.slice(0, 5).forEach(function(r) {
-            h += '<div class="dropdown-item" onclick="openCatalog(\'' + r.brand + '\');document.getElementById(\'searchDropdown\').classList.remove(\'active\');"><img src="' + (r.product.img || 'https://i.ibb.co/p7YgvT8/images.jpg') + '"><div class="dropdown-info"><div class="dropdown-name">' + r.product.name + '</div><div class="dropdown-brand">' + r.brand + '</div></div><div class="dropdown-price">' + r.product.price + '</div></div>';
+            const safeName = r.product.name.replace(/'/g, "\\'");
+            h += '<div class="dropdown-item" onclick="goToProduct(\'' + r.brand + '\',\'' + safeName + '\');document.getElementById(\'searchDropdown\').classList.remove(\'active\');"><img src="' + (r.product.img || 'https://i.ibb.co/p7YgvT8/images.jpg') + '"><div class="dropdown-info"><div class="dropdown-name">' + r.product.name + '</div><div class="dropdown-brand">' + r.brand + '</div></div><div class="dropdown-price">' + r.product.price + '</div></div>';
         });
         if (results.length > 5) {
             h += '<div class="dropdown-view-all" onclick="performSearch();document.getElementById(\'searchDropdown\').classList.remove(\'active\');">Показать все (' + results.length + ')</div>';
