@@ -647,7 +647,7 @@ function openCatalog(brandName) {
 
     const newSubs = categories.filter(function(c) { return c.parent === 'new'; });
     html += '<div class="category-group">';
-    html += '<button class="category-btn category-parent-btn ' + (currentCategory === 'new' ? 'active' : '') + '" data-category="new" data-has-children="' + (newSubs.length > 0) + '"><span>✨ Новинки</span>' + (newSubs.length > 0 ? '<span class="arrow">▶</span>' : '') + '</button>';
+    html += '<button class="category-btn category-parent-btn ' + (currentCategory === 'new' ? 'active' : '') + '" data-category="new" data-has-children="' + (newSubs.length > 0) + '"><span> Новинки</span>' + (newSubs.length > 0 ? '<span class="arrow">▶</span>' : '') + '</button>';
     if (newSubs.length > 0) {
         html += '<div class="subcategory-container" data-parent="new">';
         newSubs.forEach(function(sub) {
