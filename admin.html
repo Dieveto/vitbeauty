@@ -42,8 +42,8 @@
         .stat-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px 10px; text-align: center; border: 1px solid rgba(200,168,122,0.1); }
         .stat-number { font-size: 28px; font-weight: 700; color: #c8a87a; }
         .stat-label { font-size: 11px; color: #888; margin-top: 5px; text-transform: uppercase; }
-        .order-search { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .order-search input { flex: 1; margin-bottom: 0; min-width: 150px; }
+        .order-search { display: flex; gap: 10px; margin-bottom: 15px; }
+        .order-search input { flex: 1; margin-bottom: 0; }
         .order-list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(200,168,122,0.08); cursor: pointer; transition: 0.3s; }
         .order-list-item:hover { background: rgba(200,168,122,0.06); border-color: rgba(200,168,122,0.2); }
         .order-list-left { display: flex; align-items: center; gap: 15px; }
@@ -60,7 +60,7 @@
         .order-detail.open { display: block; }
         .order-detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #aaa; }
         .order-detail-row span:last-child { color: #f5f0eb; font-weight: 500; }
-        .order-detail-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+        .order-detail-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
         .order-detail-actions select { width: auto; padding: 8px 32px 8px 12px; font-size: 12px; margin-bottom: 0; border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(200,168,122,0.2); }
         .toast { position: fixed; top: 20px; right: 20px; background: #c8a87a; color: #0b0b0b; padding: 15px 25px; border-radius: 10px; z-index: 9999; animation: slideIn 0.3s ease; font-weight: 600; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -104,7 +104,13 @@
             </form>
         </div>
         
-        <div class="section"><h2>📂 Категории</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;"><div><h3>➕ Категория</h3><input type="text" id="newCatName" placeholder="Название"><select id="newCatBrand"><option value="">Бренд</option><option value="HAIR SEKTA">HAIR SEKTA</option><option value="IMPRESSION PROFESSIONAL">IMPRESSION PROFESSIONAL</option><option value="MALECULA">MALECULA</option><option value="ЧИСТОВЬЕ">ЧИСТОВЬЕ</option></select><button onclick="addCategory()">➕</button></div><div><h3>📁 Подкатегория</h3><select id="parentCatSelect"><option value="">Родительская</option></select><input type="text" id="newSubCatName" placeholder="Название"><button onclick="addSubCategory()">➕</button></div></div><h3>Список</h3><div id="categoryList"></div></div>
+        <div class="section"><h2>📂 Категории</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                <div><h3>➕ Категория</h3><input type="text" id="newCatName" placeholder="Название"><select id="newCatBrand"><option value="">Бренд</option><option value="HAIR SEKTA">HAIR SEKTA</option><option value="IMPRESSION PROFESSIONAL">IMPRESSION PROFESSIONAL</option><option value="MALECULA">MALECULA</option><option value="ЧИСТОВЬЕ">ЧИСТОВЬЕ</option></select><button onclick="addCategory()">➕</button></div>
+                <div><h3>📁 Подкатегория</h3><select id="parentCatSelect"><option value="">Родительская</option></select><input type="text" id="newSubCatName" placeholder="Название"><button onclick="addSubCategory()">➕</button></div>
+            </div>
+            <h3>Список</h3><div id="categoryList"></div>
+        </div>
         
         <div class="section"><h2>📦 Товары</h2>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
@@ -309,7 +315,6 @@
         }
         
         function toggleProductSelect(id) { if (selectedProducts.has(id)) selectedProducts.delete(id); else selectedProducts.add(id); renderProducts(); }
-        
         function toggleSelectAll() {
             const all = [];
             Object.entries(brandCatalog).forEach(([b, d]) => d.products.forEach(p => all.push(p.id)));
@@ -318,7 +323,6 @@
             else selectedProducts.clear();
             renderProducts();
         }
-        
         function deleteSelected() {
             if (selectedProducts.size === 0) return;
             if (!confirm(`Удалить ${selectedProducts.size} выбранных товаров?`)) return;
@@ -338,18 +342,14 @@
                         const subs = d.categories.filter(c => c.parent === sysId);
                         if (subs.length > 0) {
                             h += `<div class="category-item"><div class="cat-info"><span class="badge badge-brand">${b}</span><span style="color:#fff;">${sysCat.label}</span><span class="cat-id" onclick="copyToClipboard('${sysCat.id}')">🆔 ${sysCat.id}</span><span style="font-size:12px;color:#888;">(${subs.length})</span></div></div>`;
-                            subs.forEach(sub => { 
-                                h += `<div class="category-item subcategory"><div class="cat-info"><span style="color:#fff;">└─ ${sub.label}</span><span class="cat-id" onclick="copyToClipboard('${sub.id}')">🆔 ${sub.id}</span></div><button class="danger small" onclick="deleteCategory('${b}','${sub.id}')">🗑️</button></div>`; 
-                            });
+                            subs.forEach(sub => { h += `<div class="category-item subcategory"><div class="cat-info"><span style="color:#fff;">└─ ${sub.label}</span><span class="cat-id" onclick="copyToClipboard('${sub.id}')">🆔 ${sub.id}</span></div><button class="danger small" onclick="deleteCategory('${b}','${sub.id}')">🗑️</button></div>`; });
                         }
                     }
                 });
                 d.categories.filter(cat => !cat.parent && cat.id !== 'all' && cat.id !== 'new').forEach(cat => {
                     const subs = d.categories.filter(c => c.parent === cat.id);
                     h += `<div class="category-item"><div class="cat-info"><span class="badge badge-brand">${b}</span><span style="color:#fff;">${cat.label}</span><span class="cat-id" onclick="copyToClipboard('${cat.id}')">🆔 ${cat.id}</span>${subs.length ? '<span style="font-size:12px;color:#888;">(' + subs.length + ')</span>' : ''}</div><button class="danger small" onclick="deleteCategory('${b}','${cat.id}')">🗑️</button></div>`;
-                    subs.forEach(sub => { 
-                        h += `<div class="category-item subcategory"><div class="cat-info"><span style="color:#fff;">└─ ${sub.label}</span><span class="cat-id" onclick="copyToClipboard('${sub.id}')">🆔 ${sub.id}</span></div><button class="danger small" onclick="deleteCategory('${b}','${sub.id}')">🗑️</button></div>`; 
-                    });
+                    subs.forEach(sub => { h += `<div class="category-item subcategory"><div class="cat-info"><span style="color:#fff;">└─ ${sub.label}</span><span class="cat-id" onclick="copyToClipboard('${sub.id}')">🆔 ${sub.id}</span></div><button class="danger small" onclick="deleteCategory('${b}','${sub.id}')">🗑️</button></div>`; });
                 });
             });
             c.innerHTML = h || '<p style="color:#666;padding:20px;">Категорий пока нет</p>';
@@ -363,10 +363,7 @@
                     cs.innerHTML += `<option value="all|${b}">Все товары (${b})</option>`;
                     cs.innerHTML += `<option value="new|${b}">Новинки (${b})</option>`;
                     d.categories.filter(c => !c.parent && c.id !== 'all' && c.id !== 'new').forEach(cat => cs.innerHTML += `<option value="${cat.id}|${b}">${cat.label} (${b})</option>`); 
-                    d.categories.filter(c => c.parent).forEach(sub => { 
-                        const pn = getParentCategoryName(b, sub.id); 
-                        cs.innerHTML += `<option value="${sub.id}|${b}">└─ ${pn ? pn + ' → ' : ''}${sub.label} (${b})</option>`; 
-                    }); 
+                    d.categories.filter(c => c.parent).forEach(sub => { const pn = getParentCategoryName(b, sub.id); cs.innerHTML += `<option value="${sub.id}|${b}">└─ ${pn ? pn + ' → ' : ''}${sub.label} (${b})</option>`; }); 
                 }); 
             }
             if (ps) { 
@@ -387,10 +384,7 @@
                     cs.innerHTML += `<option value="all|${b}">Все товары (${b})</option>`;
                     cs.innerHTML += `<option value="new|${b}">Новинки (${b})</option>`;
                     d.categories.filter(c => !c.parent && c.id !== 'all' && c.id !== 'new').forEach(cat => cs.innerHTML += `<option value="${cat.id}|${b}">${cat.label} (${b})</option>`); 
-                    d.categories.filter(c => c.parent).forEach(sub => { 
-                        const pn = getParentCategoryName(b, sub.id); 
-                        cs.innerHTML += `<option value="${sub.id}|${b}">└─ ${pn ? pn + ' → ' : ''}${sub.label} (${b})</option>`; 
-                    }); 
+                    d.categories.filter(c => c.parent).forEach(sub => { const pn = getParentCategoryName(b, sub.id); cs.innerHTML += `<option value="${sub.id}|${b}">└─ ${pn ? pn + ' → ' : ''}${sub.label} (${b})</option>`; }); 
                 }); 
             }
         }
@@ -440,17 +434,10 @@
                 const catObj = brandCatalog[brand].categories.find(c => c.id === catId);
                 if (catObj) { 
                     product.categoryId = catId; 
-                    if (catId === 'all' || catId === 'new') {
-                        product.category = catObj.label;
-                    } else {
-                        const parentCat = catObj.parent ? getParentCategoryName(brand, catId) : '';
-                        product.category = parentCat ? parentCat + ' → ' + catObj.label : catObj.label;
-                    }
+                    if (catId === 'all' || catId === 'new') { product.category = catObj.label; }
+                    else { const parentCat = catObj.parent ? getParentCategoryName(brand, catId) : ''; product.category = parentCat ? parentCat + ' → ' + catObj.label : catObj.label; }
                 }
-            } else { 
-                product.categoryId = ''; 
-                product.category = 'Все товары'; 
-            }
+            } else { product.categoryId = ''; product.category = 'Все товары'; }
             saveData(); renderAll(); closeEditModal();
             showToast('✅ Товар обновлён!');
         }
@@ -463,12 +450,7 @@
             if (!brand || !name || !price) return showToast('Заполните поля!');
             const cs = document.getElementById('productCategory');
             let cn = 'Все товары', ci = '';
-            if (cs.value) { 
-                const parts = cs.value.split('|');
-                ci = parts[0];
-                const catObj = brandCatalog[brand].categories.find(c => c.id === ci);
-                if (catObj) { cn = catObj.label; } else { cn = cs.selectedOptions[0].text.split(' (')[0]; }
-            }
+            if (cs.value) { const parts = cs.value.split('|'); ci = parts[0]; const catObj = brandCatalog[brand].categories.find(c => c.id === ci); if (catObj) { cn = catObj.label; } }
             const p = { id: 'prod_' + Date.now(), name, article: document.getElementById('productArticle').value.trim() || '', brand, price: price.includes('BYN') ? price : price + ' BYN', oldPrice: document.getElementById('productOldPrice').value.trim() || null, category: cn, categoryId: ci, tag: null, img: document.getElementById('productImg').value.trim() || 'https://i.ibb.co/p7YgvT8/images.jpg', description: document.getElementById('productDesc').value.trim() || '' };
             brandCatalog[brand].products.push(p);
             saveData(); renderAll();
@@ -478,14 +460,12 @@
         
         function deleteProduct(id) { if (!confirm('Удалить товар?')) return; Object.values(brandCatalog).forEach(d => d.products = d.products.filter(p => p.id !== id)); selectedProducts.delete(id); saveData(); renderAll(); showToast('🗑️ Товар удалён'); }
         function addCategory() { const n = document.getElementById('newCatName').value.trim(), b = document.getElementById('newCatBrand').value; if (!n || !b) return showToast('Заполните!'); brandCatalog[b].categories.push({ id: 'cat_' + Date.now(), label: n, parent: null }); saveData(); renderAll(); document.getElementById('newCatName').value = ''; }
-        
         function addSubCategory() {
             const rawValue = document.getElementById('parentCatSelect').value;
             const n = document.getElementById('newSubCatName').value.trim();
             if (!n || !rawValue) return showToast('Заполните!');
             const parts = rawValue.split('|');
-            const pid = parts[0];
-            const fb = parts[1];
+            const pid = parts[0], fb = parts[1];
             if (!brandCatalog[fb]) return showToast('Бренд не найден!');
             const sid = pid + '_sub_' + n.replace(/\s/g, '_');
             if (brandCatalog[fb].categories.find(c => c.id === sid)) return showToast('❌ Такая подкатегория уже есть');
@@ -494,7 +474,6 @@
             document.getElementById('newSubCatName').value = '';
             showToast('✅ Подкатегория добавлена');
         }
-        
         function deleteCategory(brand, id) { if (!confirm('Удалить категорию и все подкатегории?')) return; brandCatalog[brand].categories = brandCatalog[brand].categories.filter(c => c.id !== id && c.parent !== id); saveData(); renderAll(); }
         function clearAll() { if (confirm('Удалить ВСЕ товары?')) { Object.values(brandCatalog).forEach(d => d.products = []); selectedProducts.clear(); saveData(); renderAll(); } }
         function copyToClipboard(t) { navigator.clipboard?.writeText(t).then(() => showToast('📋 ' + t)).catch(() => { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }); }
@@ -505,7 +484,6 @@
             if (serverOrders.length > 0) return serverOrders;
             return oldOrders;
         }
-        
         function searchOrders() { renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); }
         function resetOrderSearch() { document.getElementById('orderSearchInput').value = ''; renderOrdersAdmin(); }
         function renderOrdersAdmin(q) {
@@ -516,16 +494,7 @@
             c.innerHTML = orders.map(o => `<div class="order-list-item" onclick="toggleOrderDetail('${o.number}')"><div class="order-list-left"><div class="order-list-number">#${o.number}</div><div class="order-list-total">${o.total} BYN</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="order-list-date">${o.date}</div><span class="order-list-status status-${o.status}">${{new:'🆕 Новый',accepted:'✅ Принят',delivery:'🚚 Доставка',done:'✅ Завершён',cancel:'❌ Отменён'}[o.status]||'В обработке'}</span></div></div><div class="order-detail" id="detail-${o.number}"><div class="order-detail-row"><span>Клиент:</span><span>${o.name}</span></div><div class="order-detail-row"><span>Телефон:</span><span>${o.phone}</span></div><div class="order-detail-row"><span>Товары:</span><span>${o.items}</span></div><div class="order-detail-row"><span>Сумма:</span><span>${o.total} BYN</span></div><div class="order-detail-actions"><span style="font-size:12px;color:#888;">Статус:</span><select onchange="changeOrderStatus('${o.number}',this.value)" onclick="event.stopPropagation();"><option value="new" ${o.status==='new'?'selected':''}>🆕 Новый</option><option value="accepted" ${o.status==='accepted'?'selected':''}>✅ Принят</option><option value="delivery" ${o.status==='delivery'?'selected':''}>🚚 Доставка</option><option value="done" ${o.status==='done'?'selected':''}>✅ Завершён</option><option value="cancel" ${o.status==='cancel'?'selected':''}>❌ Отменён</option></select></div></div>`).join('');
         }
         function toggleOrderDetail(n) { const d = document.getElementById('detail-' + n); if (d) { if (d.classList.contains('open')) d.classList.remove('open'); else d.classList.add('open'); } }
-        function changeOrderStatus(n, s) { 
-            const orders = getAllOrders(); 
-            const o = orders.find(x => x.number === n); 
-            if (o) { 
-                o.status = s; 
-                localStorage.setItem(ORDERS_SERVER_KEY, JSON.stringify(orders)); 
-                renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); 
-                showToast('✅ Статус обновлён');
-            } 
-        }
+        function changeOrderStatus(n, s) { const orders = getAllOrders(); const o = orders.find(x => x.number === n); if (o) { o.status = s; localStorage.setItem(ORDERS_SERVER_KEY, JSON.stringify(orders)); renderOrdersAdmin(document.getElementById('orderSearchInput').value.trim()); showToast('✅ Статус обновлён'); } }
         
         function downloadFile(content, filename, type = 'text/csv;charset=utf-8;') { const blob = new Blob(['\uFEFF' + content], { type }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
         function getAllProductsArray() { const all = []; Object.entries(brandCatalog).forEach(([brand, data]) => { data.products.forEach(p => all.push({ ...p, brand })); }); return all; }
@@ -534,7 +503,6 @@
         function exportByBrand() { const brands = Object.entries(brandCatalog).filter(([b,d]) => d.products.length > 0); if (!brands.length) return showToast('Нет товаров!'); const overlay = document.createElement('div'); overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;'; overlay.innerHTML = `<div style="background:#1a1410;border-radius:20px;padding:30px;max-width:500px;width:90%;border:1px solid rgba(200,168,122,0.3);"><h2 style="color:#c8a87a;">📥 Выберите бренд</h2>${brands.map(([b,d]) => `<div onclick="exportSingleBrand('${b}');this.parentElement.parentElement.remove();" style="padding:15px;cursor:pointer;margin:10px 0;background:rgba(255,255,255,0.05);border-radius:10px;">${b} (${d.products.length})</div>`).join('')}</div>`; document.body.appendChild(overlay); overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); }); }
         function exportSingleBrand(brand) { const data = brandCatalog[brand]; if (!data) return; let csv = 'Бренд;ID КАТ;Артикул;Название;Категория;Подкатегория;Цена;Старая цена;Тег;Фото;Описание\n'; data.products.forEach(p => { const parentCat = p.categoryId ? getParentCategoryName(brand, p.categoryId) : ''; const subCat = parentCat ? p.category.split(' → ').pop() : ''; const mainCat = parentCat || (p.category.includes(' → ') ? p.category.split(' → ')[0] : p.category); csv += [brand, p.categoryId||'', p.article||'', p.name, mainCat, subCat, p.price||'', p.oldPrice||'', p.tag||'', p.img||'', (p.description||'').replace(/;/g,',')].join(';') + '\n'; }); downloadFile(csv, brand.replace(/\s/g,'_')+'.csv'); showToast('✅ Скачано!'); }
         function exportCategories() { let csv = 'Бренд;ID категории;Название;Тип;Родитель\n'; Object.entries(brandCatalog).forEach(([b, d]) => d.categories.filter(c => c.id !== 'all' && c.id !== 'new').forEach(c => csv += `${b};${c.id};${c.label};${c.parent?'Подкатегория':'Категория'};${c.parent||''}\n`)); downloadFile(csv, 'categories.csv'); showToast('Категории экспортированы!'); }
-        
         function exportAddedCategories() {
             let csv = 'Бренд;ID категории;Название;Тип;Родитель\n';
             let count = 0;
@@ -573,6 +541,12 @@
                 const subCatIdx = findColumnIndex(headers, 'Подкатегория', 'подкатегория', 'subcategory');
                 const nameIdx = findColumnIndex(headers, 'Название', 'название', 'Наименование', 'Номенклатура');
                 const priceIdx = findColumnIndex(headers, 'Цена', 'цена', 'Розничная');
+                const oldPriceIdx = findColumnIndex(headers, 'Старая цена', 'старая цена', 'old price');
+                const descIdx = findColumnIndex(headers, 'Описание', 'описание');
+                const artIdx = findColumnIndex(headers, 'Артикул', 'артикул');
+                const tagIdx = findColumnIndex(headers, 'Тег', 'тег', 'tag');
+                const imgIdx = findColumnIndex(headers, 'Фото', 'фото', 'img', 'image');
+                const catIdIdx = findColumnIndex(headers, 'ID КАТ', 'id кат', 'category id');
                 if (nameIdx === -1 || priceIdx === -1) return showToast('❌ Не найдены Название или Цена!');
                 let count = 0, skipped = 0;
                 for (let i = 1; i < lines.length; i++) {
@@ -582,16 +556,63 @@
                     const brandRaw = brandIdx >= 0 ? (cols[brandIdx] || '') : '';
                     const catRaw = catIdx >= 0 ? (cols[catIdx] || '') : '';
                     const subCatRaw = subCatIdx >= 0 ? (cols[subCatIdx] || '') : '';
+                    const article = artIdx >= 0 ? (cols[artIdx] || '') : '';
+                    const description = descIdx >= 0 ? (cols[descIdx] || '') : '';
+                    const oldPrice = oldPriceIdx >= 0 ? (cols[oldPriceIdx] || '') : '';
+                    const tag = tagIdx >= 0 ? (cols[tagIdx] || '') : '';
+                    const img = imgIdx >= 0 ? (cols[imgIdx] || '') : '';
+                    const catId = catIdIdx >= 0 ? (cols[catIdIdx] || '') : '';
                     if (!name || !priceRaw) continue;
                     const priceNum = parseFloat(priceRaw); if (isNaN(priceNum)) continue;
                     let foundBrand = brandRaw ? BRAND_NAMES.find(b => b.toUpperCase() === brandRaw.toUpperCase() || b.toUpperCase().includes(brandRaw.toUpperCase())) : null;
                     if (!foundBrand) foundBrand = BRAND_NAMES.find(b => name.toUpperCase().includes(b.toUpperCase()) || catRaw.toUpperCase().includes(b.toUpperCase()) || subCatRaw.toUpperCase().includes(b.toUpperCase()));
                     if (!foundBrand) { skipped++; continue; }
                     if (!brandCatalog[foundBrand]) brandCatalog[foundBrand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] };
-                    const catResult = findOrCreateCategory(foundBrand, catRaw, subCatRaw);
-                    const displayCategory = catResult.parentName ? catResult.parentName + ' → ' + catResult.name : catResult.name;
-                    const product = { id: 'imp_' + Date.now() + '_' + i, article: '', name, brand: foundBrand, price: priceNum.toFixed(2) + ' BYN', oldPrice: null, category: displayCategory, categoryId: catResult.id, tag: null, img: 'https://i.ibb.co/p7YgvT8/images.jpg', description: '' };
-                    if (!brandCatalog[foundBrand].products.find(p => p.name === name && p.brand === foundBrand)) { brandCatalog[foundBrand].products.push(product); count++; }
+                    
+                    let finalCategoryId = '';
+                    let finalCategoryName = 'Все товары';
+                    
+                    // Если указан ID КАТ
+                    if (catId && !['all', 'new', ''].includes(catId)) {
+                        const existingCat = brandCatalog[foundBrand].categories.find(function(x) { return x.id === catId; });
+                        if (!existingCat) {
+                            if (catId.includes('_sub_')) {
+                                const pid = catId.split('_sub_')[0];
+                                if (!brandCatalog[foundBrand].categories.find(function(x) { return x.id === pid; })) {
+                                    brandCatalog[foundBrand].categories.push({ id: pid, label: catRaw || 'Категория', parent: null });
+                                }
+                                brandCatalog[foundBrand].categories.push({ id: catId, label: subCatRaw || 'Подкатегория', parent: pid });
+                            } else {
+                                brandCatalog[foundBrand].categories.push({ id: catId, label: catRaw || 'Категория', parent: null });
+                            }
+                        }
+                        finalCategoryId = catId;
+                        finalCategoryName = catRaw || 'Все товары';
+                    } else {
+                        // Используем Категория/Подкатегория
+                        const catResult = findOrCreateCategory(foundBrand, catRaw, subCatRaw);
+                        finalCategoryId = catResult.id;
+                        finalCategoryName = catResult.parentName ? catResult.parentName + ' → ' + catResult.name : catResult.name;
+                    }
+                    
+                    const product = { 
+                        id: 'imp_' + Date.now() + '_' + i, 
+                        article: article || catId || ('ART-' + Date.now().toString(36).slice(-4)), 
+                        name, 
+                        brand: foundBrand, 
+                        price: priceNum.toFixed(2) + ' BYN', 
+                        oldPrice: oldPrice || null, 
+                        category: finalCategoryName, 
+                        categoryId: finalCategoryId, 
+                        tag: tag || null, 
+                        img: img && img !== '' ? img : 'https://i.ibb.co/p7YgvT8/images.jpg', 
+                        description 
+                    };
+                    
+                    if (!brandCatalog[foundBrand].products.find(p => p.name === name && p.brand === foundBrand)) {
+                        brandCatalog[foundBrand].products.push(product);
+                        count++;
+                    }
                 }
                 saveData(); renderAll();
                 showToast(`✅ Импортировано ${count} товаров` + (skipped > 0 ? ` (пропущено ${skipped})` : ''));
@@ -616,8 +637,8 @@
                     const brandIdx = findColumnIndex(headers, 'Бренд', 'бренд');
                     const catIdx = findColumnIndex(headers, 'Категория', 'категория');
                     const subCatIdx = findColumnIndex(headers, 'Подкатегория', 'подкатегория');
-                    const nameIdx = findColumnIndex(headers, 'Название', 'название', 'Наименование', 'Номенклатура');
-                    const priceIdx = findColumnIndex(headers, 'Цена', 'цена', 'Розничная');
+                    const nameIdx = findColumnIndex(headers, 'Название', 'название', 'Наименование');
+                    const priceIdx = findColumnIndex(headers, 'Цена', 'цена');
                     if (nameIdx === -1 || priceIdx === -1) { done++; return; }
                     for (let i = 1; i < lines.length; i++) {
                         const cols = lines[i].split(delimiter).map(v => v.trim());
@@ -628,8 +649,8 @@
                         const brandRaw = brandIdx >= 0 ? (cols[brandIdx] || '') : '';
                         const catRaw = catIdx >= 0 ? (cols[catIdx] || '') : '';
                         const subCatRaw = subCatIdx >= 0 ? (cols[subCatIdx] || '') : '';
-                        let foundBrand = brandRaw ? BRAND_NAMES.find(b => b.toUpperCase() === brandRaw.toUpperCase() || b.toUpperCase().includes(brandRaw.toUpperCase())) : null;
-                        if (!foundBrand) foundBrand = BRAND_NAMES.find(b => name.toUpperCase().includes(b.toUpperCase()) || catRaw.toUpperCase().includes(b.toUpperCase()) || subCatRaw.toUpperCase().includes(b.toUpperCase()));
+                        let foundBrand = brandRaw ? BRAND_NAMES.find(b => b.toUpperCase() === brandRaw.toUpperCase()) : null;
+                        if (!foundBrand) foundBrand = BRAND_NAMES.find(b => name.toUpperCase().includes(b.toUpperCase()) || catRaw.toUpperCase().includes(b.toUpperCase()));
                         if (!foundBrand) continue;
                         if (!brandCatalog[foundBrand]) brandCatalog[foundBrand] = { categories: [{ id: 'all', label: 'Все товары' }, { id: 'new', label: 'Новинки' }], products: [] };
                         const catResult = findOrCreateCategory(foundBrand, catRaw, subCatRaw);
