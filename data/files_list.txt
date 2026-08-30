@@ -1,2 +1,1 @@
-categories.csv
 all_products.csv
